@@ -1,0 +1,6 @@
+[package]
+name = "bouzu"
+version = "0.1.0"
+authors = ["Chris Davis <thechristopheriandavis@gmail.com>"]
+
+[dependencies]
