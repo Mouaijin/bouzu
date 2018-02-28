@@ -1,5 +1,6 @@
 mod register;
+mod rom;
 
 fn main() {
-    println!("Hello, world!");
+    rom::print_rom("roms/instruction_tests/01-special.gb");
 }
