@@ -11,8 +11,11 @@ fn load_rom_bytes(path : &str) -> Result<Vec<u8>, io::Error>{
 
 pub fn print_rom(path : &str){
     let bytes = load_rom_bytes(path).expect("Didn't load correctly");
-    let header = parse_header(bytes).expect("Couldn't parse header");
-    print!("{:?}", header);
+    let header = parse_header(bytes.clone()).expect("Couldn't parse header");
+    println!("header: {:?}", header);
+    let blocks = split_to_blocks(bytes);
+    println!("block count: {}", blocks.len());
+
 }
 
 #[derive(Debug)]
@@ -67,9 +70,6 @@ fn parse_rom_size(code : u8) -> Result<(u16, u16),String>{
         0x6 => Ok((2048, 128)),
         0x7 => Ok((4096,256)),
         0x8 => Ok((8192, 512)),
-        0x52 => Ok((1100, 72)),
-        0x53 => Ok((1200, 80)),
-        0x54 => Ok((1500, 96)),
         _ => Err("Unrecognized rom size code".to_string())
 
     }
@@ -102,6 +102,28 @@ fn parse_header(dat : Vec<u8>) -> Result<CartridgeHeader, String>{
     return Ok(CartridgeHeader{title : title, color: color, model : model, logo : logo, rom_size_kb : romsize, rom_banks : rombanks, ram_size_kb : ramsize, ram_banks: rambanks, japanese: japanese, checksum : checksum });
 }
 
-// struct Cartridge{
+type Block16Kb = Vec<u8>;
 
-// }
+pub fn split_to_blocks(dat : Vec<u8>) -> Vec<Block16Kb>{
+    let size = 0x4000;
+    let end_address = dat.len();
+    let block_count = ((end_address as f64)/ (size as f64)).ceil() as usize;
+    let mut res : Vec<Block16Kb> = Vec::new();
+    for i in 0..block_count {
+        let offset = i * size;
+        if offset + size < end_address{
+            res.push( dat[offset .. offset + size].iter().cloned().collect());
+        }
+        else {
+            let mut temp : Vec<u8> = dat[offset .. end_address].iter().cloned().collect();
+            temp.resize(size, 0);
+            res.push(temp);
+        }
+    }
+    return res;
+}
+
+struct Cartridge{
+    header : CartridgeHeader,
+    blocks : Vec<Block16Kb>
+}
