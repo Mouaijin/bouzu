@@ -9,12 +9,25 @@ fn load_rom_bytes(path : &str) -> Result<Vec<u8>, io::Error>{
     Ok(buffer)
 }
 
+pub fn load_rom(path : &str) -> Result<Box<Cartridge>,String>{
+    let bytes = match load_rom_bytes(path){
+        Ok(x) => x,
+        Err(e) => return Err(e.to_string()) 
+    };
+    let header = parse_header(bytes.clone())?;
+    let rom = parse_rom(header, bytes)?;
+    Ok(rom)
+}
+
 pub fn print_rom(path : &str){
     let bytes = load_rom_bytes(path).expect("Didn't load correctly");
     let header = parse_header(bytes.clone()).expect("Couldn't parse header");
     println!("header: {:?}", header);
     let blocks = split_to_blocks(bytes);
     println!("block count: {}", blocks.len());
+    let rom = load_rom(path).unwrap();
+    let head2 = rom.get_header();
+    println!("rom type: {:?}, rom color: {:?}, japanese?: {}", head2.model, head2.color, head2.japanese);
 
 }
 
@@ -35,7 +48,7 @@ enum ColorSupport {
 }
 
 #[derive(Debug)]
-struct CartridgeHeader {
+pub struct CartridgeHeader {
     title : String,
     color: ColorSupport,
     model : CartridgeType,
@@ -47,6 +60,8 @@ struct CartridgeHeader {
     japanese : bool,
     checksum : u8
 }
+type Block16Kb = Vec<u8>;
+
 
 fn parse_cartridge_type(code : u8) -> Result<CartridgeType,String>{
     match code{
@@ -102,9 +117,8 @@ fn parse_header(dat : Vec<u8>) -> Result<CartridgeHeader, String>{
     return Ok(CartridgeHeader{title : title, color: color, model : model, logo : logo, rom_size_kb : romsize, rom_banks : rombanks, ram_size_kb : ramsize, ram_banks: rambanks, japanese: japanese, checksum : checksum });
 }
 
-type Block16Kb = Vec<u8>;
 
-pub fn split_to_blocks(dat : Vec<u8>) -> Vec<Block16Kb>{
+fn split_to_blocks(dat : Vec<u8>) -> Vec<Block16Kb>{
     let size = 0x4000;
     let end_address = dat.len();
     let block_count = ((end_address as f64)/ (size as f64)).ceil() as usize;
@@ -123,7 +137,51 @@ pub fn split_to_blocks(dat : Vec<u8>) -> Vec<Block16Kb>{
     return res;
 }
 
-struct Cartridge{
-    header : CartridgeHeader,
-    blocks : Vec<Block16Kb>
+fn parse_rom(header : CartridgeHeader, data : Vec<u8>) -> Result<Box<Cartridge>, String>{
+    match header.model{
+        CartridgeType::ROM => Ok(Box::new(RomCartridge{header : header, memory : split_to_blocks(data)})),
+        _ => Err("Not supported yet".to_string())
+    }
 }
+
+
+// pub struct Mbc1Cartridge{
+//     header : CartridgeHeader,
+//     blocks : Vec<Block16Kb>,
+//     current_block : usize
+// }
+
+pub struct RomCartridge{
+    header : CartridgeHeader,
+    memory : Vec<Block16Kb>
+}
+pub trait Cartridge{
+    fn get_header(&self) -> &CartridgeHeader;
+    fn get_block_0(&self) -> &Block16Kb;
+    fn get_block_1(&self) -> &Block16Kb;
+    fn swap_block_1(&mut self, bank : usize);
+}
+
+impl Cartridge for RomCartridge{
+    fn get_header(&self) -> &CartridgeHeader{
+         &self.header
+    }
+    fn get_block_0(&self) -> &Block16Kb{
+        &self.memory[0]
+    }
+    fn get_block_1(&self) -> &Block16Kb{
+        &self.memory[1]
+    }
+    ///Does nothing, as there is no memory bank controller
+    fn swap_block_1(&mut self, _bank : usize){
+        ()
+    }
+
+}
+
+
+
+
+// pub struct CartridgeUnit{
+//     rom : Box<Cartridge>
+// }
