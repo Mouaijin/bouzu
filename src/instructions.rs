@@ -1,9 +1,5 @@
 use register;
-type Addr = u16;
-type Du8 = u8;
-type Ds8 = i8;
-type BitIndex = u8;
-type Du16 = u16;
+use shared::*;
 
 
 

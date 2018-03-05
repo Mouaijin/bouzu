@@ -1,3 +1,4 @@
+mod shared;
 mod instructions;
 mod rom;
 mod mmu;

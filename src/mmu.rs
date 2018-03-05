@@ -1,19 +1,80 @@
 use rom;
-struct Mmu{
-    rom : Box<rom::Cartridge>,
-    ///0x8000 - 0x09fff (1fff wide)
-    vram : Vec<u8>,
-    ///0xc000 - 0xcfff (1fff wide) (0xc000 - 0xddff echoed in 0xe000-0xfdff)
-    work_ram_0 : Vec<u8>,
-    ///0xd000 - 0xdfff (1fff wide) (1 bank in DMG, 1~7 in CGB) (0xc000 - 0xddff echoed in 0xe000-0xfdff)
-    work_ram_1 : Vec<u8>,
-    ///0xfe00 - 0xfe9f (0x9f wide)
-    sprite_table : Vec<u8>,
-    ///0xff00 - 0xff7f (0x7f wide)
-    io_registers : Vec<u8>,
-    ///0xff80 - 0xfffe (0x7e wide)
-    hram : Vec<u8>,
-    /// 0xffff
-    interrupts : u8
+use register;
+use shared::*;
 
+pub struct Mmu {
+    rom: Box<rom::Cartridge>,
+    ///0x8000 - 0x9fff (1fff wide)
+    vram: [u8; 0x1fff],
+    ///0xc000 - 0xcfff (1fff wide) (0xc000 - 0xddff echoed in 0xe000-0xfdff)
+    work_ram_0: [u8; 0x1fff],
+    ///0xd000 - 0xdfff (1fff wide) (1 bank in DMG, 1~7 in CGB) (0xc000 - 0xddff echoed in 0xe000-0xfdff)
+    work_ram_1: [u8; 0x1fff],
+    ///0xfe00 - 0xfe9f (0x9f wide)
+    sprite_table: [u8; 0x9f],
+    ///0xff00 - 0xff7f (0x7f wide)
+    ///todo: encapsulate IO memory for easier use
+    io_registers: [u8; 0x7f],
+    ///0xff80 - 0xfffe (0x7e wide)
+    hram: [u8; 0x7e],
+    /// 0xffff
+    interrupts: u8,
+    ///CPU register
+    register: register::CpuRegister,
 }
+
+impl Mmu {
+    pub fn new(rom: Box<rom::Cartridge>) -> Self {
+        Mmu {
+            rom: rom,
+            vram: [0; 0x1fff],
+            work_ram_0: [0; 0x1fff],
+            work_ram_1: [0; 0x1fff],
+            sprite_table: [0; 0x9f],
+            io_registers: [0; 0x7f],
+            hram: [0; 0x7e],
+            interrupts: 0,
+            register: register::CpuRegister::new(),
+        }
+    }
+    pub fn read8(&self, addr:u16) -> u8{
+        match addr{
+            //rom memory banks
+            0x0000...0x7fff => self.rom.read8(addr),
+            0x8000...0x9fff => self.vram[0x8000 - addr as usize],
+            //external ram (handled by cartridge)
+            0xa000...0xbfff => self.rom.read8(addr),
+            //work ram 0
+            0xc000...0xcfff =>  self.work_ram_0[0xa000 - addr as usize],
+            //work ram 1..n
+            0xd000...0xdfff =>  self.work_ram_1[0xd000 - addr as usize],
+            //echo ram
+            0xe000...0xfdff => self.read8(addr - 0x2000),
+            //sprite table
+            0xfe00...0xfe9f => self.sprite_table[0xfe00 - addr as usize],
+            //unusable, I'll just return a 0
+            0xfea0...0xfeff => 0,
+            //io registers
+            0xff00...0xff7f => self.io_registers[0xff00 - addr as usize],
+            //hram
+            0xff80...0xfffe => self.hram[0xff80 - addr as usize],
+            //interrupt register
+            0xffff => self.interrupts,
+            _ => 0
+        }
+    }
+    pub fn read16(&self, addr: u16) -> u16{
+        if addr < 0xffff{
+            join_u8(self.read8(addr), self.read8(addr+1))
+        }
+        else{
+            //todo: probably wrong
+            //this just left-shifts the last address's value 8 places when reading past the last byte
+            join_u8(self.read8(addr), 0)
+        }
+    }
+}
+
+// fn in_range<T : PartialOrd>(x : T, lo : T, hi : T) -> bool{
+//     x >= lo && x <= hi
+// }

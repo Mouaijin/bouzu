@@ -1,3 +1,5 @@
+use shared::*;
+
 #[derive(Debug)]
 pub enum Reg8Name {
     A,
@@ -136,11 +138,3 @@ impl CpuRegister{
     }
 }
 
-fn split_u16(val : u16) -> (u8,u8){
-    let hi = (val >> 8) as u8;
-    let lo = ((val << 8) >> 8) as u8;
-    (hi, lo)
-}
-fn join_u8(hi : u8, lo : u8) -> u16 {
-    ((hi as u16) << 8) | (lo as u16)
-}
