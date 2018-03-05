@@ -1,4 +1,4 @@
-mod register;
+mod instructions;
 mod rom;
 mod mmu;
 

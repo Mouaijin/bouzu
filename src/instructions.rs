@@ -5,7 +5,7 @@ type BitIndex = u8;
 type Du16 = u16;
 
 #[derive(Debug)]
-enum Reg8 {
+enum Reg8Name {
     A,
     B,
     C,
@@ -16,7 +16,7 @@ enum Reg8 {
     L
 }
 #[derive(Debug)]
-enum Reg16 {
+enum Reg16Name {
     AF,
     BC,
     DE,
@@ -55,73 +55,73 @@ enum Instruction {
     ///Halt cpu completely
     Stop,
     ///swap register nibbles
-    SwapR8(Reg8),
+    SwapR8(Reg8Name),
     ///swap address nibbles
-    SwapR16(Reg16),
+    SwapR16(Reg16Name),
     ///load immediate into 8-bit register
-    LdR8D8(Reg8, Du8),
+    LdR8D8(Reg8Name, Du8),
     ///load referenced value into 8-bit register
-    LdR8A16(Reg16, Addr),
+    LdR8A16(Reg16Name, Addr),
     /// Store value in 8 bit register into address
-    LdA16R8(Addr, Reg8),
+    LdA16R8(Addr, Reg8Name),
     ///Load value in 8 bit register to another register
-    LdR8R8(Reg8, Reg8),
+    LdR8R8(Reg8Name, Reg8Name),
     ///Load 16 bit value into 16 bit register
-    LdR16D16(Reg16, Du16),
+    LdR16D16(Reg16Name, Du16),
     ///Load value in 16 bit register in 16 bit register
-    LdR16R16(Reg16, Reg16),
+    LdR16R16(Reg16Name, Reg16Name),
     ///Store value in 8 bit register into adress in 16 bit register
-    LdAR16R8(Reg16, Reg8),
+    LdAR16R8(Reg16Name, Reg8Name),
     ///Store 8 bit value in address in 16 bit register
-    LdAR16D8(Reg16, Du8),
+    LdAR16D8(Reg16Name, Du8),
     ///Load value in address in 16 bit register into 8 bit register
-    LdR8AR16(Reg8, Reg16),
+    LdR8AR16(Reg8Name, Reg16Name),
     ///Store value in 16 bit register into address
-    LdA16R16(Addr, Reg16),
+    LdA16R16(Addr, Reg16Name),
     ///Store value in 8 bit register into address in 16 bit register and then increment 16 bit register
-    LdiAR16R8(Reg16, Reg8),
+    LdiAR16R8(Reg16Name, Reg8Name),
     ///Store value in 8 bit register into address in 16 bit register and then decrement 16 bit register
-    LddAR16R8(Reg16, Reg8),
+    LddAR16R8(Reg16Name, Reg8Name),
     ///Load value in address in 16 register into 8 bit register and increment 16 bit register
-    LdiR8AR16(Reg8, Reg16),
+    LdiR8AR16(Reg8Name, Reg16Name),
     ///Load value in address in 16 register into 8 bit register and decrement 16 bit register
-    LddR8AR16(Reg8, Reg16),
+    LddR8AR16(Reg8Name, Reg16Name),
     ///Load value in address (FF00 + 8 bit address) in 8 bit register
-    LdhR8A8(Reg8, Du8),
+    LdhR8A8(Reg8Name, Du8),
     ///Store value in 8 bit register in address (FF00 + 8 bit address)
-    LdhA8R8(Du8, Reg8),
+    LdhA8R8(Du8, Reg8Name),
     ///Store value in 8 bit register in address (FF00 + 8 bit register)
-    LdhAR8R8(Reg8, Reg8),
+    LdhAR8R8(Reg8Name, Reg8Name),
     ///Add signed 8 bit value to SP and copy SP to 16 bit register
-    LdhlR16D8(Reg16, Ds8),
+    LdhlR16D8(Reg16Name, Ds8),
     ///Inc value in 8 bit register
-    IncR8(Reg8),
+    IncR8(Reg8Name),
     ///Inc value in 16 bit register
-    IncR16(Reg16),
+    IncR16(Reg16Name),
     ///Inc value address in 16 bit register
-    IncAR16(Reg16),
+    IncAR16(Reg16Name),
     ///Dec value in 8 bit register
-    DecR8(Reg8),
+    DecR8(Reg8Name),
     ///Dec value in 16 bit register
-    DecR16(Reg16),
+    DecR16(Reg16Name),
     ///Dec value address in 16 bit register
-    DecAR16(Reg16),
+    DecAR16(Reg16Name),
     ///Set carry flag
     Scf,
     ///Clear carry flag
     Ccf,
     ///Test bit n in 8 bit register
-    BitR8(BitIndex, Reg8),
+    BitR8(BitIndex, Reg8Name),
     ///Test bit n in address in 16 bit register
-    BitAR16(BitIndex, Reg16),
+    BitAR16(BitIndex, Reg16Name),
     ///Clear bit n in 8 bit register
-    ResR8(BitIndex, Reg8),
+    ResR8(BitIndex, Reg8Name),
     ///Clear bit n in address in 16 bit register
-    ResAR16(BitIndex, Reg16),
+    ResAR16(BitIndex, Reg16Name),
     ///Set bit n in 8 bit register
-    SetR8(BitIndex, Reg8),
+    SetR8(BitIndex, Reg8Name),
     ///Set bit n in address in 16 bit register
-    SetAR16(BitIndex, Reg16),
+    SetAR16(BitIndex, Reg16Name),
     ///Bitwise NOT on register A
     Cpl,
     ///Rotate A left with carry
@@ -133,37 +133,37 @@ enum Instruction {
     ///Rotate A right
     Rra,
     ///Rotate 8 bit register left with carry
-    RlcR8(Reg8),
+    RlcR8(Reg8Name),
     ///Rotate value pointed by 16 bit register left with carry
-    RlcAR16(Reg16),
+    RlcAR16(Reg16Name),
     ///Rotate 8 bit register left
-    RlR8(Reg8),
+    RlR8(Reg8Name),
     ///Rotate value pointed by 16 bit register left
-    RlAR16(Reg16),
+    RlAR16(Reg16Name),
     ///Rotate 8 bit register right with carry
-    RrcR8(Reg8),
+    RrcR8(Reg8Name),
     ///Rotate value pointed by 16 bit register right with carry
-    RrcAR16(Reg16),
+    RrcAR16(Reg16Name),
     ///Rotate 8 bit register right
-    RrR8(Reg8),
+    RrR8(Reg8Name),
     ///Rotate value pointed by 16 bit register right
-    RrAR16(Reg16),
+    RrAR16(Reg16Name),
     ///Shift 8 bit register left, preserving sign
-    SlaR8(Reg8),
+    SlaR8(Reg8Name),
     ///Shift value pointed by 16 bit register left, preserving sign
-    SlaAR16(Reg16),
+    SlaAR16(Reg16Name),
     ///Shift 8 bit register right, preserving sign
-    SraR8(Reg8),
+    SraR8(Reg8Name),
     ///Shift value pointed by 16 bit register right, preserving sign
-    SraAR16(Reg16),
+    SraAR16(Reg16Name),
     ///Shift 8 bit register right
-    SrlR8(Reg8),
+    SrlR8(Reg8Name),
     ///Shift value pointed by 16 bit register right
-    SrlAR16(Reg16),
+    SrlAR16(Reg16Name),
     ///Absolute jump to address
     JpA16(Addr),
     ///Jump to address in address in 16 bit register (erhh)
-    JpAR16(Reg16),
+    JpAR16(Reg16Name),
     ///Jump to address if flag is set
     JpFA16(BitFlag, Addr),
     ///Jump to address if flag is not set
@@ -175,67 +175,67 @@ enum Instruction {
     ///Relative jump with signed offset if flag is not set
     JrNfA8(BitFlag, Ds8),
     ///Add 8 bit register to 8 bit register
-    AddR8R8(Reg8, Reg8),
+    AddR8R8(Reg8Name, Reg8Name),
     ///Add 8 bit value to 8 bit register
-    AddR8D8(Reg8, Du8),
+    AddR8D8(Reg8Name, Du8),
     ///Add value pointed by 16 bit register to 8 bit register
-    AddR8AR16(Reg8, Reg16),
+    AddR8AR16(Reg8Name, Reg16Name),
     ///Add 16 bit register to 16 bit register
-    AddR16R16(Reg16, Reg16),
+    AddR16R16(Reg16Name, Reg16Name),
     ///Add signed 8 bit value to 16 bit register
-    AddR16D8(Reg16, Ds8),
+    AddR16D8(Reg16Name, Ds8),
     ///Add 8 bit register to 8 bit register with carry
-    AdcR8R8(Reg8, Reg8),
+    AdcR8R8(Reg8Name, Reg8Name),
     ///Add 8 bit value to 8 bit register with carry
-    AdcR8D8(Reg8, Du8),
+    AdcR8D8(Reg8Name, Du8),
     ///Add value in address in 16 bit register to 8 bit register with carry
-    AdcR8AR16(Reg8, Reg16),
+    AdcR8AR16(Reg8Name, Reg16Name),
     ///Subtract value in 8 bit register with 8 bit register
-    SubR8R8(Reg8, Reg8),
+    SubR8R8(Reg8Name, Reg8Name),
     ///Subtract 8 bit value from 8 bit register
-    SubR8D8(Reg8, Du8),
+    SubR8D8(Reg8Name, Du8),
     ///Subtract value in address in 16 bit register from 8 bit register
-    SubR8AR16(Reg8, Reg16),
+    SubR8AR16(Reg8Name, Reg16Name),
     ///Subtract value in 8 bit register + carry from 8 bit register
-    SbcR8R8(Reg8, Reg8),
+    SbcR8R8(Reg8Name, Reg8Name),
     ///Subtract value in address in 16 bit register + carry from 8 bit register
-    SbcR8AR16(Reg8, Reg16),
+    SbcR8AR16(Reg8Name, Reg16Name),
     ///Subtract 8 bit value + carry from 8 bit register
-    SbcR8D8(Reg8, Du8),
+    SbcR8D8(Reg8Name, Du8),
     ///Bitwise AND between 8 bit registers
-    AndR8R8(Reg8, Reg8),
+    AndR8R8(Reg8Name, Reg8Name),
     ///Bitwise AND between 8 bit register and 8 bit value
-    AndR8D8(Reg8, Du8),
+    AndR8D8(Reg8Name, Du8),
     ///Bitwise AND between 8 bit register and value in address in 16 bit register
-    AndR8AR16(Reg8, Reg16),
+    AndR8AR16(Reg8Name, Reg16Name),
     ///Bitwise OR between 8 bit registers
-    OrR8R8(Reg8, Reg8),
+    OrR8R8(Reg8Name, Reg8Name),
     ///Bitwise OR between 8 bit register and 8 bit value
-    OrR8D8(Reg8, Du8),
+    OrR8D8(Reg8Name, Du8),
     ///Bitwise OR between 8 bit register and value in address in 16 bit register
-    OrR8AR16(Reg8, Reg16),
+    OrR8AR16(Reg8Name, Reg16Name),
     ///Bitwise XOR between 8 bit registers
-    XorR8R8(Reg8, Reg8),
+    XorR8R8(Reg8Name, Reg8Name),
     ///Bitwise XOR between 8 bit register and 8 bit value
-    XorR8D8(Reg8, Du8),
+    XorR8D8(Reg8Name, Du8),
     ///Bitwise XOR between 8 bit register and value in address in 16 bit register
-    XorR8AR16(Reg8, Reg16),
+    XorR8AR16(Reg8Name, Reg16Name),
     ///Enabled interrupts
     Ei,
     ///Disable interrupts
     Di,
     ///Compare 8 bit register with 8 bit register
-    CpR8R8(Reg8, Reg8),
+    CpR8R8(Reg8Name, Reg8Name),
     ///Compare 8 bit register with value in address in 16 bit register
-    CpR8AR16(Reg8, Reg16),
+    CpR8AR16(Reg8Name, Reg16Name),
     ///Compare 8 bit register with 8 bit value
-    CpR8D8(Reg8, Du8),
+    CpR8D8(Reg8Name, Du8),
     ///Converts 8 bit register into packed BCD
-    DaaR8(Reg8),
+    DaaR8(Reg8Name),
     ///Push 16 bit register onto stack
-    PushR16(Reg16),
+    PushR16(Reg16Name),
     ///Pop 16 bit value from stack into 16 bit register
-    PopR16(Reg16),
+    PopR16(Reg16Name),
     ///Call routine at address
     CallA16(Addr),
     ///Call routine at address if flag is set
