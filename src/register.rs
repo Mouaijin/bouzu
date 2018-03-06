@@ -45,6 +45,7 @@ pub struct CpuRegister {
     ///  5    h     -   -    Half Carry Flag (BCD)
     ///  4    cy    C   NC   Carry Flag
     ///  3-0  -     -   -    Not used (always zero)
+    /// ZNHC0000 (byte layout)
     ///```
     f: u8,
     ///BC high
@@ -71,26 +72,26 @@ impl CpuRegister{
     }
     pub fn set_flag(&mut self, flag: BitFlag){
         match flag {
-            BitFlag::Z => self.f |= 0b00000001,
-            BitFlag::N => self.f |= 0b00000010,
-            BitFlag::H => self.f |= 0b00000100,
-            BitFlag::C => self.f |= 0b00001000
+            BitFlag::Z => self.f |= 0b10000000,
+            BitFlag::N => self.f |= 0b01000000,
+            BitFlag::H => self.f |= 0b00100000,
+            BitFlag::C => self.f |= 0b00010000
         }
     }
     pub fn clear_flag(&mut self, flag: BitFlag){
         match flag {
-            BitFlag::Z => self.f &= 0b11111110,
-            BitFlag::N => self.f &= 0b11111101,
-            BitFlag::H => self.f &= 0b11111011,
-            BitFlag::C => self.f &= 0b11110111
+            BitFlag::Z => self.f &= 0b01111111,
+            BitFlag::N => self.f &= 0b10111111,
+            BitFlag::H => self.f &= 0b11011111,
+            BitFlag::C => self.f &= 0b11111111
         }
     }
     pub fn flag_is_set(&self, flag: BitFlag) -> bool{
         match flag{
-            BitFlag::Z => self.f & 0b00000001 == 1,
-            BitFlag::N => (self.f & 0b00000010) >> 1 == 1,
-            BitFlag::H => (self.f & 0b00000100) >> 2 == 1,
-            BitFlag::C => (self.f & 0b00001000) >> 3 == 1
+            BitFlag::Z => self.f & 0b10000000 >> 7 == 1,
+            BitFlag::N => (self.f & 0b01000000) >> 6 == 1,
+            BitFlag::H => (self.f & 0b00100000) >> 5 == 1,
+            BitFlag::C => (self.f & 0b00010000) >> 4 == 1
         }
     }
     pub fn flag_is_unset(&self, flag: BitFlag) -> bool{
