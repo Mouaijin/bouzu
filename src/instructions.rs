@@ -752,3 +752,65 @@ fn decode(mmu: &mmu::Mmu, addr: Addr) -> Instruction {
         }
     }
 }
+
+impl Instruction{
+    pub fn get_size(self) -> u8{
+        use self::Instruction::*;
+{        
+        match self{
+     Nop
+    | Stop
+    | Halt
+    | AdcR8AR16(_,_)
+    | AdcR8R8(_,_)  
+    | AddR16R16(_,_)
+    | AddR8AR16(_,_)
+    | AddR8R8(_,_)
+    | AndR8R8(_,_)
+    | AndR8AR16(_,_)
+    | Ccf
+    | Cpl 
+    | CpR8AR16(_,_)
+    | CpR8R8(_,_)
+    | DaaR8(_)
+    | DecAR16(_) 
+    | DecR16(_)
+    | DecR8(_)
+    | Di
+    | Ei
+    | IncAR16(_) 
+    | IncR16 (_)
+    | IncR8 (_)
+    | JpAR16 (_)
+    | LddAR16R8(_,_) 
+    | LddR8AR16 (_,_)
+    | LdhAR8R8 (_,_)
+    | LdiAR16R8 (_,_)
+    | LdiR8AR16 (_,_)
+    | LdAR16R8 (_,_)
+    | LdR16R16 (_,_)
+    | LdR8R8 (_,_)
+    | LdR8AR16 (_,_)
+    | OrR8AR16 (_,_)
+    | OrR8R8 (_,_)
+    | PopR16 (_)
+    | PushR16 (_)
+    | Rlca 
+    | Rla
+    | Rrca
+    | Rra
+    | SbcR8AR16 (_,_)
+    | SbcR8R8 (_,_)
+    | Scf 
+    | SubR8AR16 (_,_)
+    | SubR8R8(_,_)
+    | XorR8AR16 (_,_)
+    | XorR8R8 (_,_)
+    | Ret
+    | Reti
+    | RetF(_)
+    | RetNf (_)
+    | Rst(_) => 1
+        }
+    }}
+}
