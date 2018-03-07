@@ -753,114 +753,115 @@ fn decode(mmu: &mmu::Mmu, addr: Addr) -> Instruction {
     }
 }
 
-impl Instruction{
-    pub fn get_size(self) -> u8{
+impl Instruction {
+    pub fn get_size(self) -> u8 {
         use self::Instruction::*;
-{        
-        match self{
-     Nop
-    | Stop
-    | Halt
-    | AdcR8AR16(_,_)
-    | AdcR8R8(_,_)  
-    | AddR16R16(_,_)
-    | AddR8AR16(_,_)
-    | AddR8R8(_,_)
-    | AndR8R8(_,_)
-    | AndR8AR16(_,_)
-    | Ccf
-    | Cpl 
-    | CpR8AR16(_,_)
-    | CpR8R8(_,_)
-    | DaaR8(_)
-    | DecAR16(_) 
-    | DecR16(_)
-    | DecR8(_)
-    | Di
-    | Ei
-    | IncAR16(_) 
-    | IncR16 (_)
-    | IncR8 (_)
-    | JpAR16 (_)
-    | LddAR16R8(_,_) 
-    | LddR8AR16 (_,_)
-    | LdhAR8R8 (_,_)
-    | LdiAR16R8 (_,_)
-    | LdiR8AR16 (_,_)
-    | LdAR16R8 (_,_)
-    | LdR16R16 (_,_)
-    | LdR8R8 (_,_)
-    | LdR8AR16 (_,_)
-    | OrR8AR16 (_,_)
-    | OrR8R8 (_,_)
-    | PopR16 (_)
-    | PushR16 (_)
-    | Rlca 
-    | Rla
-    | Rrca
-    | Rra
-    | SbcR8AR16 (_,_)
-    | SbcR8R8 (_,_)
-    | Scf 
-    | SubR8AR16 (_,_)
-    | SubR8R8(_,_)
-    | XorR8AR16 (_,_)
-    | XorR8R8 (_,_)
-    | Ret
-    | Reti
-    | RetF(_)
-    | RetNf (_)
-    | Rst(_) => 1,
+        {
+            match self {
+                Nop
+                | Stop
+                | Halt
+                | AdcR8AR16(_, _)
+                | AdcR8R8(_, _)
+                | AddR16R16(_, _)
+                | AddR8AR16(_, _)
+                | AddR8R8(_, _)
+                | AndR8R8(_, _)
+                | AndR8AR16(_, _)
+                | Ccf
+                | Cpl
+                | CpR8AR16(_, _)
+                | CpR8R8(_, _)
+                | DaaR8(_)
+                | DecAR16(_)
+                | DecR16(_)
+                | DecR8(_)
+                | Di
+                | Ei
+                | IncAR16(_)
+                | IncR16(_)
+                | IncR8(_)
+                | JpAR16(_)
+                | LddAR16R8(_, _)
+                | LddR8AR16(_, _)
+                | LdhAR8R8(_, _)
+                | LdiAR16R8(_, _)
+                | LdiR8AR16(_, _)
+                | LdAR16R8(_, _)
+                | LdR16R16(_, _)
+                | LdR8R8(_, _)
+                | LdR8AR16(_, _)
+                | OrR8AR16(_, _)
+                | OrR8R8(_, _)
+                | PopR16(_)
+                | PushR16(_)
+                | Rlca
+                | Rla
+                | Rrca
+                | Rra
+                | SbcR8AR16(_, _)
+                | SbcR8R8(_, _)
+                | Scf
+                | SubR8AR16(_, _)
+                | SubR8R8(_, _)
+                | XorR8AR16(_, _)
+                | XorR8R8(_, _)
+                | Ret
+                | Reti
+                | RetF(_)
+                | RetNf(_)
+                | Rst(_) => 1,
 
-    BitAR16(_,_)
-    | BitR8(_,_)
-    | LdR8D8(_,_) 
-    | AdcR8D8(_,_)
-    | AddR8D8(_,_)
-    | AddR16D8(_,_)
-    | AndR8D8(_,_)
-    | CpR8D8(_,_)
-    | JrA8(_)
-    | JrFA8(_,_)
-    | JrNfA8(_,_)
-    | LdhlR16D8(_,_)
-    | LdhA8R8(_,_)
-    | LdhR8A8(_,_)
-    | LdAR16D8(_,_)
-    | OrR8D8(_,_)
-    | ResAR16(_,_)
-    | ResR8 (_,_)
-    | SbcR8D8 (_,_)
-    | SetAR16 (_,_)
-    | SetR8 (_,_)
-    | SubR8D8 (_,_)
-    | SwapAR16 (_)
-    | SwapR8 (_)
-    | XorR8D8 (_,_)
-    | RlcR8 (_)
-    | RlcAR16 (_)
-    | RlR8 (_)
-    | RlAR16 (_)
-    | RrcR8 (_)
-    | RrcAR16 (_)
-    | RrR8 (_)
-    | RrAR16 (_)
-    | SlaR8 (_)
-    | SlaAR16 (_)
-    | SraR8 (_)
-    | SraAR16(_)
-    | SrlR8 (_)
-| SrlAR16 (_) =>2,
-LdR8A16(_,_)
-    | JpA16 (_)
-    | JpFA16 (_,_)
-    | JpNfA16 (_,_)
-    | LdA16R16 (_,_)
-    | LdA16R8 (_,_)
-    | LdR16D16 (_,_)
-    | CallA16 (_)
-    | CallFA16 (_,_)
-| CallNfA16 (_,_) =>3
+                BitAR16(_, _)
+                | BitR8(_, _)
+                | LdR8D8(_, _)
+                | AdcR8D8(_, _)
+                | AddR8D8(_, _)
+                | AddR16D8(_, _)
+                | AndR8D8(_, _)
+                | CpR8D8(_, _)
+                | JrA8(_)
+                | JrFA8(_, _)
+                | JrNfA8(_, _)
+                | LdhlR16D8(_, _)
+                | LdhA8R8(_, _)
+                | LdhR8A8(_, _)
+                | LdAR16D8(_, _)
+                | OrR8D8(_, _)
+                | ResAR16(_, _)
+                | ResR8(_, _)
+                | SbcR8D8(_, _)
+                | SetAR16(_, _)
+                | SetR8(_, _)
+                | SubR8D8(_, _)
+                | SwapAR16(_)
+                | SwapR8(_)
+                | XorR8D8(_, _)
+                | RlcR8(_)
+                | RlcAR16(_)
+                | RlR8(_)
+                | RlAR16(_)
+                | RrcR8(_)
+                | RrcAR16(_)
+                | RrR8(_)
+                | RrAR16(_)
+                | SlaR8(_)
+                | SlaAR16(_)
+                | SraR8(_)
+                | SraAR16(_)
+                | SrlR8(_)
+                | SrlAR16(_) => 2,
+                LdR8A16(_, _)
+                | JpA16(_)
+                | JpFA16(_, _)
+                | JpNfA16(_, _)
+                | LdA16R16(_, _)
+                | LdA16R8(_, _)
+                | LdR16D16(_, _)
+                | CallA16(_)
+                | CallFA16(_, _)
+                | CallNfA16(_, _) => 3,
+            }
         }
-    }}
+    }
 }

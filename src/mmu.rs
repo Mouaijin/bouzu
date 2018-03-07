@@ -20,8 +20,6 @@ pub struct Mmu {
     hram: [u8; 0x7e],
     /// 0xffff
     interrupts: u8,
-    ///CPU register
-    register: register::CpuRegister,
 }
 
 impl Mmu {
@@ -35,7 +33,6 @@ impl Mmu {
             io_registers: [0; 0x7f],
             hram: [0; 0x7e],
             interrupts: 0,
-            register: register::CpuRegister::new(),
         }
     }
     pub fn read8(&self, addr:u16) -> u8{
