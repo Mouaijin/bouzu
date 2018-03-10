@@ -67,6 +67,27 @@ impl Cpu {
         }
         self.register.a = result as u8;
     }
+    ///Logical AND with A register
+    ///Sets Z,C(0),N(0),H(1)
+    fn and8(&mut self, imm : Du8){
+        
+    }
+    ///Logical OR with A register
+    ///Sets Z, C(0), N(0), H(0)
+    fn or8(&mut self, imm : Du8){}
+    ///Logical XOR with A register
+    ///Sets Z, C(0), N(0), H(0)
+    fn xor8(&mut self, imm:Du8){}
+    ///Compares operand with A register by subtracting from A register
+    ///Does not change A register, just flags
+    ///Sets Z,C,N(1),H
+    fn cp8(&mut self, imm:Du8){}
+    ///Increases the value in a register by one
+    ///Sets Z,N(0),H
+    fn inc8(&mut self, reg : Reg8Name){}
+    ///Decreases the value in a register by one
+    ///Sets Z, N(0), H
+    fn dec8(&mut self, reg : Reg8Name){}
 }
 ///Instruction logic
 impl Cpu{
