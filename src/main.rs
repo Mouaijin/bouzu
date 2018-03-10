@@ -6,5 +6,7 @@ mod mmu;
 mod register;
 
 fn main() {
-    rom::print_rom("roms/real/tetris.gb");
+    // rom::print_rom("roms/real/tetris.gb");
+
 }
+

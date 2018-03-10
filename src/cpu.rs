@@ -62,7 +62,7 @@ impl Cpu {
             true => 1,
             false => 0
         };
-       if low_nibble(self.register.a) as i8 + low_nibble(imm) as i8  - carry < 0 {
+       if low_nibble(self.register.a) as i8 - low_nibble(imm) as i8  - carry < 0 {
             self.register.set_flag(BitFlag::H)
         }
         self.register.a = result as u8;
@@ -70,24 +70,83 @@ impl Cpu {
     ///Logical AND with A register
     ///Sets Z,C(0),N(0),H(1)
     fn and8(&mut self, imm : Du8){
-        
+        self.register.a &= imm;
+        if self.register.a == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        self.register.set_flag(BitFlag::H);
+        self.register.clear_flag(BitFlag::C);
+        self.register.clear_flag(BitFlag::N);
     }
     ///Logical OR with A register
     ///Sets Z, C(0), N(0), H(0)
-    fn or8(&mut self, imm : Du8){}
+    fn or8(&mut self, imm : Du8){
+        self.register.a |= imm;
+        if self.register.a == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        self.register.clear_flag(BitFlag::H);
+        self.register.clear_flag(BitFlag::C);
+        self.register.clear_flag(BitFlag::N);
+    }
     ///Logical XOR with A register
     ///Sets Z, C(0), N(0), H(0)
-    fn xor8(&mut self, imm:Du8){}
+    fn xor8(&mut self, imm:Du8){
+        self.register.a ^= imm;
+        if self.register.a == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        self.register.clear_flag(BitFlag::H);
+        self.register.clear_flag(BitFlag::C);
+        self.register.clear_flag(BitFlag::N);
+    }
     ///Compares operand with A register by subtracting from A register
     ///Does not change A register, just flags
     ///Sets Z,C,N(1),H
-    fn cp8(&mut self, imm:Du8){}
+    fn cp8(&mut self, imm:Du8){
+        let mut result: i16 = imm as i16 - self.register.a as i16;
+
+
+        //Set carry
+        if result < 0 {
+            self.register.set_flag(BitFlag::C);
+        }
+        //Set zero
+        if result == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        //Set SUB flag
+        self.register.set_flag(BitFlag::N);
+
+       if (low_nibble(self.register.a) as i8 - low_nibble(imm) as i8) < 0 {
+            self.register.set_flag(BitFlag::H)
+        }
+    }
     ///Increases the value in a register by one
     ///Sets Z,N(0),H
-    fn inc8(&mut self, reg : Reg8Name){}
+    fn inc8(&mut self, reg : Reg8Name){
+        let val = ((self.register.get_reg8(reg.clone()) as u16) + 1) as u8;
+        self.register.set_reg8(reg, val);
+        if val == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        if nth_bit(val, 3){
+            self.register.set_flag(BitFlag::H);
+        }
+        self.register.clear_flag(BitFlag::N);
+    }
+    ///Increases the value in memory by one
+    ///Sets Z,N(0),H
+    fn inc8_mem(&mut self, mut mmu: mmu::Mmu){
+        
+    }
     ///Decreases the value in a register by one
     ///Sets Z, N(0), H
     fn dec8(&mut self, reg : Reg8Name){}
+
+    ///Decreases the value in memory by one
+    ///Sets Z, N(0), H
+    fn dec8_mem(&mut self, mut mmu : mmu::Mmu){}
 }
 ///Instruction logic
 impl Cpu{

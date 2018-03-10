@@ -1,6 +1,6 @@
 use shared::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Reg8Name {
     A,
     B,
@@ -11,7 +11,7 @@ pub enum Reg8Name {
     H,
     L,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Reg16Name {
     AF,
     BC,
@@ -21,7 +21,7 @@ pub enum Reg16Name {
     PC,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum BitFlag {
     ///Zero flag (This bit becomes set (1) if the result of an operation has been zero (0). Used for conditional jumps. )
     Z,
@@ -144,6 +144,20 @@ impl CpuRegister {
             Reg16Name::HL => join_u8(self.h, self.l),
             Reg16Name::SP => self.sp,
             Reg16Name::PC => self.pc,
+        }
+    }
+
+    pub fn get_reg8(&self, reg: Reg8Name) -> u8{
+        use self::Reg8Name::*;
+        match reg{
+            A =>  self.a,
+            B =>  self.b,
+            C =>  self.c,
+            D =>  self.d,
+            E =>  self.e,
+            F =>  self.f,
+            H =>  self.h,
+            L =>  self.l
         }
     }
 }
