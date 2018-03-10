@@ -17,6 +17,12 @@ pub fn nth_bit(num: u8, bit_index: u8) -> bool {
     (num >> bit_index) & 1 == 1
 }
 
+pub fn high_nibble(val : u8) -> u8{
+    val & 0b11110000
+}
+pub fn low_nibble(val : u8) -> u8{
+    val & 0b00001111
+}
 pub type Addr = u16;
 pub type Du8 = u8;
 pub type Ds8 = i8;
