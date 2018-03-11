@@ -185,6 +185,36 @@ impl Cpu {
         }
         self.register.clear_flag(BitFlag::N);
     }
+
+    ///This instruction adds the contents of the given register pair to register pair HL
+    ///Sets C, N(0)
+    fn add16(&mut self, reg: Reg16Name) {
+        let val = self.register.get_reg16(reg.clone()) as u32
+            + self.register.get_reg16(Reg16Name::HL) as u32;
+        if val > 0xffff {
+            self.register.set_flag(BitFlag::C)
+        }
+        self.register.clear_flag(BitFlag::N);
+        self.register.set_reg16(Reg16Name::HL, val as u16);
+    }
+    ///Increments the value of the given register pair
+    ///Sets {}
+    fn inc16(&mut self, reg: Reg16Name) {
+        let val = match self.register.get_reg16(reg.clone()) {
+            0xffff => 0,
+            x => x + 1,
+        };
+        self.register.set_reg16(reg, val);
+    }
+    ///Decreases the value of the given register pair
+    ///Sets {}
+    fn dec16(&mut self, reg: Reg16Name) {
+        let val = match self.register.get_reg16(reg.clone()) {
+            0 => 0xffff,
+            x => x - 1,
+        };
+        self.register.set_reg16(reg, val);
+    }
 }
 ///Instruction logic
 impl Cpu {}
