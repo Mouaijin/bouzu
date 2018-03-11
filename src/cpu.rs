@@ -286,6 +286,26 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
     }
+
+    ///Tests bit b in register r or the byte addressed in HL. Basically the specified bit gets copied to the Z flag AND INVERTED.
+    ///Sets Z, N(0),H(1)
+    fn bit(&mut self, byte: &mut u8, b: u8){
+        self.register.set_flag_b(BitFlag::Z, !nth_bit(*byte, b));
+        self.register.set_flag(BitFlag::H);
+        self.register.clear_flag(BitFlag::N);
+    }
+    ///Sets (1) bit b in register r or the byte addressed in HL.
+    ///No flags
+    fn set(&mut self, byte : &mut u8, b:u8){
+        *byte |= 1 << b;
+    }
+    ///Resets (0) bit b in register r or the byte addressed in HL. 
+    ///No flags
+    fn reset(&mut self, byte : &mut u8, b:u8){
+        let mut mask :  u8 = 0b11111110;
+        mask.rotate_left(b as u32);
+        *byte &= mask;
+    }
 }
 ///Instruction logic
 impl Cpu {}
