@@ -308,4 +308,20 @@ impl Cpu {
     }
 }
 ///Instruction logic
-impl Cpu {}
+impl Cpu {
+    fn inc_pc(&mut self, ins: Instruction){
+
+    }
+    pub fn run_ins(&mut self, mmu : &mut mmu::Mmu, ins: Instruction){
+        use instructions::Instruction::*;
+        use register::Reg8Name::*;
+        use register::Reg16Name::*;
+        match ins{
+            Nop => (),
+            _ => ()
+        }
+
+    }
+
+    //CALL subtracts 2 bytes from SP after pushing return address (0xfffe) RET adds it back to SP and moves PC back to the address there 
+}

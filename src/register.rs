@@ -170,6 +170,20 @@ impl CpuRegister {
         }
     }
 
+    pub fn get_reg8_ref(&mut self, reg : Reg8Name) -> &mut u8{
+        use self::Reg8Name::*;
+        match reg{
+            A =>  &mut self.a,
+            B =>  &mut self.b,
+            C =>  &mut self.c,
+            D =>  &mut self.d,
+            E =>  &mut self.e,
+            F =>  &mut self.f,
+            H =>  &mut self.h,
+            L =>  &mut self.l
+        }
+    }
+
     pub fn get_hl(&self)->u16{
         self.get_reg16(Reg16Name::HL)
     }

@@ -16,7 +16,7 @@ use mmu;
 ///  AR16 = 16 bit address in register
 ///```
 #[derive(Debug)]
-enum Instruction {
+pub enum Instruction {
     ///No-op
     Nop,
     ///Halt until interrupt
@@ -223,7 +223,7 @@ enum Instruction {
     Rst(Addr),
 }
 
-fn decode(mmu: &mmu::Mmu, addr: Addr) -> Instruction {
+pub fn decode(mmu: &mmu::Mmu, addr: Addr) -> Instruction {
     //op-code is first byte
     let op = mmu.read8(addr);
     //op-code may be followed by 01 byte arguments
