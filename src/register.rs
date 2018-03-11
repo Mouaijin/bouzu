@@ -108,6 +108,15 @@ impl CpuRegister {
     pub fn flag_is_unset(&self, flag: BitFlag) -> bool {
         !self.flag_is_set(flag)
     }
+    pub fn set_flag_b(&mut self, flag:BitFlag, b : bool){
+        if b{
+            self.set_flag(flag);
+        }
+        else{
+            self.clear_flag(flag);
+        }
+    }
+
     pub fn set_reg8(&mut self, reg: Reg8Name, val: u8) {
         match reg {
             Reg8Name::A => self.a = val,
