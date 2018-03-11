@@ -120,46 +120,14 @@ impl Cpu {
             self.register.set_flag(BitFlag::H)
         }
     }
-    ///Increases the value in a register by one
+    ///Increases the referenced value by one
     ///Sets Z,N(0),H
-    fn inc8(&mut self, reg: Reg8Name) {
-        let val = match self.register.get_reg8(reg.clone()) {
+    fn inc8(&mut self, byte : &mut u8) {
+        let val = match byte.clone() {
             0xFF => 0,
             x => x + 1,
         };
-        self.register.set_reg8(reg, val);
-        if val == 0 {
-            self.register.set_flag(BitFlag::Z);
-        }
-        if nth_bit(val, 3) {
-            self.register.set_flag(BitFlag::H);
-        }
-        self.register.clear_flag(BitFlag::N);
-    }
-    ///Increases the value in memory by one (address in HL)
-    ///Sets Z,N(0),H
-    fn inc8_mem(&mut self, mut mmu: mmu::Mmu) {
-        let val = match mmu.read8(self.register.get_reg16(Reg16Name::HL)) {
-            0xFF => 0,
-            x => x + 1,
-        };
-        mmu.write8(self.register.get_reg16(Reg16Name::HL), val);
-        if val == 0 {
-            self.register.set_flag(BitFlag::Z);
-        }
-        if nth_bit(val, 3) {
-            self.register.set_flag(BitFlag::H);
-        }
-        self.register.clear_flag(BitFlag::N);
-    }
-    ///Decreases the value in a register by one
-    ///Sets Z, N(0), H
-    fn dec8(&mut self, reg: Reg8Name) {
-        let val = match self.register.get_reg8(reg.clone()) {
-            0 => 0xFF,
-            x => x - 1,
-        };
-        self.register.set_reg8(reg, val);
+        *byte = val;
         if val == 0 {
             self.register.set_flag(BitFlag::Z);
         }
@@ -169,14 +137,15 @@ impl Cpu {
         self.register.clear_flag(BitFlag::N);
     }
 
-    ///Decreases the value in memory by one (address in HL)
+
+    ///Decreases the referenced value by one
     ///Sets Z, N(0), H
-    fn dec8_mem(&mut self, mut mmu: mmu::Mmu) {
-        let val = match mmu.read8(self.register.get_reg16(Reg16Name::HL)) {
+    fn dec8(&mut self, byte: &mut u8) {
+        let val = match byte.clone() {
             0 => 0xFF,
             x => x - 1,
         };
-        mmu.write8(self.register.get_reg16(Reg16Name::HL), val);
+        *byte = val;
         if val == 0 {
             self.register.set_flag(BitFlag::Z);
         }
@@ -185,6 +154,7 @@ impl Cpu {
         }
         self.register.clear_flag(BitFlag::N);
     }
+
 
     ///This instruction adds the contents of the given register pair to register pair HL
     ///Sets C, N(0)
@@ -215,6 +185,41 @@ impl Cpu {
         };
         self.register.set_reg16(reg, val);
     }
+    ///Rotate Left Circular Accumulator. This instruction rotates A left one bit, placing bit 7 at bit 0 AND in the Carry flag.
+    ///Sets: C, N(0),H(0)
+    fn rlca(&mut self){}
+    ///Rotate Left Circular. This instruction rotates either register r of the byte located at the address in HL left one bit, placing bit 7 at bit 0 AND in the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn rlc(&mut self, byte : &mut u8){}
+    /// Rotate Left Accumulator. This instruction rotates A left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
+    /// Sets C,N(0),H(0)
+    fn rla(&mut self){}
+    /// Rotate Left. This instruction rotates either register r or the byte located at the address in HL left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
+    /// Sets Z,C,N(0),H(0)
+    fn rl(&mut self, byte : &mut u8){}
+    /// Rotate Right Circular Accumulator. This instruction rotates A right one bit, placing bit 0 at bit 7 AND in the Carry flag.
+    /// Sets C,N(0),H(0)
+    fn rrca(&mut self){}
+    /// Rotate Right Circular. This instruction rotates either register r of the byte located at the address in HL right one bit, placing bit 0 at bit 7 AND in the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn rrc(&mut self, byte : &mut u8){}
+    /// Rotate Right Accumulator. This instruction rotates A right one bit, placing bit 0 into the Carry flag and the contents of the Carry flag into bit 7 of A
+    /// Sets C,N(0),H(0)
+    fn rra(&mut self){}
+    /// Rotate Right. This instruction rotates either register r or the byte located at the address in HL right one bit, placing bit 0 into the Carry flag and the contents of the Carry flag into bit 7 of A
+    /// Sets Z,C,N(0),H(0)
+    fn rr(&mut self, byte : &mut u8){}
+    /// Shift Left Arithmetically. This instruction shifts either register r or the byte located at the address in HL left one bit, placing 0 into bit 0, and placing bit 7 into the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn sla(&mut self, byte : &mut u8){}
+    /// Shift Right Arithmetically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing bit 0 into the Carry flag, and leaving bit 7 untouched.
+    /// Sets Z,C,N(0),H(0)
+    fn sra(&mut self, byte : &mut u8){}
+    /// Shift Right Logically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing 0 into bit 7, and placing bit 0 into the Carry flag.
+    /// Sets Z,C,H(0),N(0)
+    fn srl(&mut self, byte : &mut u8){}
+
+
 }
 ///Instruction logic
 impl Cpu {}

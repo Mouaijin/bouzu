@@ -160,4 +160,8 @@ impl CpuRegister {
             L =>  self.l
         }
     }
+
+    pub fn get_hl(&self)->u16{
+        self.get_reg16(Reg16Name::HL)
+    }
 }
