@@ -77,7 +77,7 @@ impl CpuRegister {
             e: 0,
             h: 0,
             l: 0,
-            sp: 0,
+            sp: 0xfffe,
             pc: 0,
         }
     }

@@ -499,11 +499,30 @@ impl Cpu {
                 mmu.write8(addr, val);
                 self.register.dec_reg16(to);
             }
-            LdiR8AR16(to, from) => {}
-            LddR8AR16(to, from) => (),
-            LdhR8A8(to, from_lo) => (),
-            LdhA8R8(to_lo, from) => (),
-            LdhAR8R8(to_lo_reg, from) => (),
+            LdiR8AR16(to, from) => {
+                let addr = self.register.get_reg16(from.clone());
+                let val = mmu.read8(addr);
+                self.register.set_reg8(to, val);
+                self.register.inc_reg16(from);
+            }
+            LddR8AR16(to, from) => {
+                let addr = self.register.get_reg16(from.clone());
+                let val = mmu.read8(addr);
+                self.register.set_reg8(to, val);
+                self.register.dec_reg16(from);
+            },
+            LdhR8A8(to, from_lo) => {
+                let val = mmu.read8(0xff00 | from_lo as u16);
+                self.register.set_reg8(to, val);
+            },
+            LdhA8R8(to_lo, from) => {
+                let val = self.register.get_reg8(from);
+                mmu.write8(0xff00 | to_lo as u16, val);
+            },
+            LdhAR8R8(to_lo_reg, from) => {
+                let addr = 0xff00 | self.register.get_reg8(to_lo_reg) as u16;
+                mmu.write8(addr, self.register.get_reg8(from));
+            },
             LdhlR16D8(to, imm) => (),
             IncR8(reg) => (),
             IncR16(reg) => (),
@@ -529,18 +548,28 @@ impl Cpu {
             Rrca => self.rrca(),
             Rra => self.rra(),
             RlcR8(reg) => self.rlc_reg(reg),
-            RlcAR16(reg) => (),
-            RlR8(reg) => (),
-            RlAR16(reg) => (),
-            RrcR8(reg) => (),
+            RlcAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.rlc(&mut val);
+                mmu.write8(addr, val);
+            }
+            RlR8(reg) => self.rl_reg(reg),
+            RlAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.rl(&mut val);
+                mmu.write8(addr, val);
+            }
+            RrcR8(reg) => self.rrc_reg(reg),
             RrcAR16(reg) => (),
-            RrR8(reg) => (),
+            RrR8(reg) => self.rr_reg(reg),
             RrAR16(reg) => (),
-            SlaR8(reg) => (),
+            SlaR8(reg) => self.sla_reg(reg),
             SlaAR16(reg) => (),
-            SraR8(reg) => (),
+            SraR8(reg) => self.sra_reg(reg),
             SraAR16(reg) => (),
-            SrlR8(reg) => (),
+            SrlR8(reg) => self.srl_reg(reg),
             SrlAR16(reg) => (),
             JpA16(addr) => (),
             JpAR16(reg) => (),
@@ -580,10 +609,19 @@ impl Cpu {
             DaaR8(reg) => (),
             PushR16(reg) => (),
             PopR16(reg) => (),
-            CallA16(addr) => (),
+            CallA16(addr) => {
+                self.register.sp -= 2;
+                let pc = self.register.pc.clone();
+                mmu.write16(self.register.sp, pc);
+                self.register.pc = addr;
+            }
             CallFA16(flag, addr) => (),
             CallNfA16(flag, addr) => (),
-            Ret => (),
+            Ret => {
+                let pc = mmu.read16(self.register.sp);
+                self.register.sp += 2;
+                self.register.pc = pc;
+            }
             Reti => (),
             RetF(flag) => (),
             RetNf(flag) => (),
