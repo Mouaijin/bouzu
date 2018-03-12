@@ -48,14 +48,17 @@ impl Cpu {
             result -= 1;
         }
 
-                //Set carry
+        //Set carry
         self.register.set_flag_b(BitFlag::C, result < 0);
         //Set zero
         self.register.set_flag_b(BitFlag::Z, result == 0);
         //Set SUB flag
         self.register.set_flag(BitFlag::N);
         let carry = (use_carry && self.register.flag_is_set(BitFlag::C)) as i8;
-        self.register.set_flag_b(BitFlag::H, (low_nibble(result.clone() as u8) as i8 - low_nibble(imm) as i8 - carry) < 0);
+        self.register.set_flag_b(
+            BitFlag::H,
+            (low_nibble(result.clone() as u8) as i8 - low_nibble(imm) as i8 - carry) < 0,
+        );
         self.register.a = result as u8;
     }
     ///Logical AND with A register
@@ -289,39 +292,161 @@ impl Cpu {
 
     ///Tests bit b in register r or the byte addressed in HL. Basically the specified bit gets copied to the Z flag AND INVERTED.
     ///Sets Z, N(0),H(1)
-    fn bit(&mut self, byte: &mut u8, b: u8){
+    fn bit(&mut self, byte: &mut u8, b: u8) {
         self.register.set_flag_b(BitFlag::Z, !nth_bit(*byte, b));
         self.register.set_flag(BitFlag::H);
         self.register.clear_flag(BitFlag::N);
     }
     ///Sets (1) bit b in register r or the byte addressed in HL.
     ///No flags
-    fn set(&mut self, byte : &mut u8, b:u8){
+    fn set(&mut self, byte: &mut u8, b: u8) {
         *byte |= 1 << b;
     }
-    ///Resets (0) bit b in register r or the byte addressed in HL. 
+    ///Resets (0) bit b in register r or the byte addressed in HL.
     ///No flags
-    fn reset(&mut self, byte : &mut u8, b:u8){
-        let mut mask :  u8 = 0b11111110;
+    fn reset(&mut self, byte: &mut u8, b: u8) {
+        let mut mask: u8 = 0b11111110;
         mask.rotate_left(b as u32);
         *byte &= mask;
     }
 }
 ///Instruction logic
 impl Cpu {
-    fn inc_pc(&mut self, ins: Instruction){
-
-    }
-    pub fn run_ins(&mut self, mmu : &mut mmu::Mmu, ins: Instruction){
+    fn inc_pc(&mut self, ins: Instruction) {}
+    pub fn run_ins(&mut self, mmu: &mut mmu::Mmu, ins: Instruction) {
         use instructions::Instruction::*;
         use register::Reg8Name::*;
         use register::Reg16Name::*;
-        match ins{
+        match ins {
             Nop => (),
-            _ => ()
+            Halt => (),
+            Stop => (),
+            SwapR8(reg) => swap8(self.register.get_reg8_ref(reg)),
+            SwapAR16(reg) => {
+                let v = swap16(self.register.get_reg16(reg.clone()));
+                self.register.set_reg16(reg.clone(), v)
+            }
+            LdR8D8(reg, imm) => *self.register.get_reg8_ref(reg) = imm,
+            LdR8A16(reg, addr) => *self.register.get_reg8_ref(reg) = mmu.read8(addr),
+            LdA16R8(addr, reg) => mmu.write8(addr, self.register.get_reg8(reg)),
+            LdR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.register.set_reg8(to, val);
+            }
+            LdR16D16(reg, imm) => self.register.set_reg16(reg, imm),
+            LdR16R16(to, from) => {
+                let val = self.register.get_reg16(from);
+                self.register.set_reg16(to, val);
+            }
+            LdAR16R8(add_reg, reg) => {
+                let addr = self.register.get_reg16(add_reg);
+                mmu.write8(addr, self.register.get_reg8(reg));
+            }
+            LdAR16D8(reg, imm) => mmu.write8(self.register.get_reg16(reg), imm),
+            LdR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                *self.register.get_reg8_ref(to) = val;
+            }
+            LdA16R16(to, from) => mmu.write16(to, self.register.get_reg16(from)),
+            LdiAR16R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                let addr = self.register.get_reg16(to.clone());
+                mmu.write8(addr, val);
+                self.register.inc_reg16(to);
+            }
+            LddAR16R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                let addr = self.register.get_reg16(to.clone());
+                mmu.write8(addr, val);
+                self.register.dec_reg16(to);
+            }
+            LdiR8AR16(to, from) => {}
+            LddR8AR16(to, from) => (),
+            LdhR8A8(to, from_lo) => (),
+            LdhA8R8(to_lo, from) => (),
+            LdhAR8R8(to_lo_reg, from) => (),
+            LdhlR16D8(to, imm) => (),
+            IncR8(reg) => (),
+            IncR16(reg) => (),
+            IncAR16(reg) => (),
+            DecR8(reg) => (),
+            DecR16(reg) => (),
+            DecAR16(reg) => (),
+            Scf => (),
+            Ccf => (),
+            BitR8(bit, reg) => (),
+            BitAR16(bit, reg) => (),
+            ResR8(bit, reg) => (),
+            ResAR16(bit, reg) => (),
+            SetR8(bit, reg) => (),
+            SetAR16(bit, reg) => (),
+            Cpl => (),
+            Rlca => (),
+            Rla => (),
+            Rrca => (),
+            Rra => (),
+            RlcR8(reg) => (),
+            RlcAR16(reg) => (),
+            RlR8(reg) => (),
+            RlAR16(reg) => (),
+            RrcR8(reg) => (),
+            RrcAR16(reg) => (),
+            RrR8(reg) => (),
+            RrAR16(reg) => (),
+            SlaR8(reg) => (),
+            SlaAR16(reg) => (),
+            SraR8(reg) => (),
+            SraAR16(reg) => (),
+            SrlR8(reg) => (),
+            SrlAR16(reg) => (),
+            JpA16(addr) => (),
+            JpAR16(reg) => (),
+            JpFA16(flag, addr) => (),
+            JpNfA16(flag, addr) => (),
+            JrA8(offset) => (),
+            JrFA8(flag, offset) => (),
+            JrNfA8(flag, offset) => (),
+            AddR8R8(to, from) => (),
+            AddR8D8(reg, imm) => (),
+            AddR8AR16(to, from) => (),
+            AddR16R16(to, from) => (),
+            AddR16D8(to, imm) => (),
+            AdcR8R8(to, from) => (),
+            AdcR8D8(reg, imm) => (),
+            AdcR8AR16(to, from) => (),
+            SubR8R8(to, from) => (),
+            SubR8D8(to, imm) => (),
+            SubR8AR16(to, from) => (),
+            SbcR8R8(to, from) => (),
+            SbcR8AR16(to, from) => (),
+            SbcR8D8(to, imm) => (),
+            AndR8R8(to, from) => (),
+            AndR8D8(to, imm) => (),
+            AndR8AR16(to, from) => (),
+            OrR8R8(to, from) => (),
+            OrR8D8(to, imm) => (),
+            OrR8AR16(to, from) => (),
+            XorR8R8(to, from) => (),
+            XorR8D8(to, imm) => (),
+            XorR8AR16(to, from) => (),
+            Ei => (),
+            Di => (),
+            CpR8R8(to, from) => (),
+            CpR8AR16(to, from) => (),
+            CpR8D8(to, imm) => (),
+            DaaR8(reg) => (),
+            PushR16(reg) => (),
+            PopR16(reg) => (),
+            CallA16(addr) => (),
+            CallFA16(flag, addr) => (),
+            CallNfA16(flag, addr) => (),
+            Ret => (),
+            Reti => (),
+            RetF(flag) => (),
+            RetNf(flag) => (),
+            Rst(addr) => (),
         }
-
     }
 
-    //CALL subtracts 2 bytes from SP after pushing return address (0xfffe) RET adds it back to SP and moves PC back to the address there 
+    //CALL subtracts 2 bytes from SP after pushing return address (0xfffe) RET adds it back to SP and moves PC back to the address there
 }

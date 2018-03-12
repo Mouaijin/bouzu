@@ -17,11 +17,22 @@ pub fn nth_bit(num: u8, bit_index: u8) -> bool {
     (num >> bit_index) & 1 == 1
 }
 
-pub fn high_nibble(val : u8) -> u8{
-    val & 0b11110000
+pub fn high_nibble(val: u8) -> u8 {
+    (val & 0b11110000) >> 4
 }
-pub fn low_nibble(val : u8) -> u8{
+pub fn low_nibble(val: u8) -> u8 {
     val & 0b00001111
+}
+
+pub fn swap8(val: &mut u8) {
+    let high = high_nibble(*val);
+    let lo = low_nibble(*val);
+    *val = (lo << 4) | high;
+}
+
+pub fn swap16(val: u16) -> u16 {
+    let (hi, lo) = split_u16(val);
+    join_u8(lo, hi)
 }
 pub type Addr = u16;
 pub type Du8 = u8;

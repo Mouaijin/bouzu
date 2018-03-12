@@ -108,11 +108,10 @@ impl CpuRegister {
     pub fn flag_is_unset(&self, flag: BitFlag) -> bool {
         !self.flag_is_set(flag)
     }
-    pub fn set_flag_b(&mut self, flag:BitFlag, b : bool){
-        if b{
+    pub fn set_flag_b(&mut self, flag: BitFlag, b: bool) {
+        if b {
             self.set_flag(flag);
-        }
-        else{
+        } else {
             self.clear_flag(flag);
         }
     }
@@ -156,35 +155,64 @@ impl CpuRegister {
         }
     }
 
-    pub fn get_reg8(&self, reg: Reg8Name) -> u8{
+    pub fn get_reg8(&self, reg: Reg8Name) -> u8 {
         use self::Reg8Name::*;
-        match reg{
-            A =>  self.a,
-            B =>  self.b,
-            C =>  self.c,
-            D =>  self.d,
-            E =>  self.e,
-            F =>  self.f,
-            H =>  self.h,
-            L =>  self.l
+        match reg {
+            A => self.a,
+            B => self.b,
+            C => self.c,
+            D => self.d,
+            E => self.e,
+            F => self.f,
+            H => self.h,
+            L => self.l,
         }
     }
 
-    pub fn get_reg8_ref(&mut self, reg : Reg8Name) -> &mut u8{
+    pub fn get_reg8_ref(&mut self, reg: Reg8Name) -> &mut u8 {
         use self::Reg8Name::*;
-        match reg{
-            A =>  &mut self.a,
-            B =>  &mut self.b,
-            C =>  &mut self.c,
-            D =>  &mut self.d,
-            E =>  &mut self.e,
-            F =>  &mut self.f,
-            H =>  &mut self.h,
-            L =>  &mut self.l
+        match reg {
+            A => &mut self.a,
+            B => &mut self.b,
+            C => &mut self.c,
+            D => &mut self.d,
+            E => &mut self.e,
+            F => &mut self.f,
+            H => &mut self.h,
+            L => &mut self.l,
         }
     }
 
-    pub fn get_hl(&self)->u16{
+    pub fn get_hl(&self) -> u16 {
         self.get_reg16(Reg16Name::HL)
+    }
+
+    pub fn inc_reg16(&mut self, reg: Reg16Name) {
+        let val = match self.get_reg16(reg.clone()) {
+            0xffff => 0,
+            x => x + 1,
+        };
+        self.set_reg16(reg, val);
+    }
+    pub fn inc_reg8(&mut self, reg: Reg8Name) {
+        let val = match self.get_reg8(reg.clone()) {
+            0xff => 0,
+            x => x + 1,
+        };
+        self.set_reg8(reg, val);
+    }
+    pub fn dec_reg16(&mut self, reg: Reg16Name) {
+        let val = match self.get_reg16(reg.clone()) {
+            0 => 0xffff,
+            x => x - 1,
+        };
+        self.set_reg16(reg, val);
+    }
+    pub fn dec_reg8(&mut self, reg: Reg8Name) {
+        let val = match self.get_reg8(reg.clone()) {
+            0 => 0xff,
+            x => x - 1,
+        };
+        self.set_reg8(reg, val);
     }
 }
