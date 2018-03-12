@@ -92,6 +92,7 @@ pub enum Instruction {
     ///Set bit n in address in 16 bit register
     SetAR16(BitIndex, Reg16Name),
     ///Bitwise NOT on register A
+    ///Set N(1),H(1)
     Cpl,
     ///Rotate A left with carry
     Rlca,

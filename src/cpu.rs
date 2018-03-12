@@ -372,20 +372,27 @@ impl Cpu {
             DecR8(reg) => (),
             DecR16(reg) => (),
             DecAR16(reg) => (),
-            Scf => (),
-            Ccf => (),
+            Scf => self.register.set_flag(BitFlag::C),
+            Ccf => self.register.clear_flag(BitFlag::C),
             BitR8(bit, reg) => (),
             BitAR16(bit, reg) => (),
             ResR8(bit, reg) => (),
             ResAR16(bit, reg) => (),
             SetR8(bit, reg) => (),
             SetAR16(bit, reg) => (),
-            Cpl => (),
-            Rlca => (),
-            Rla => (),
-            Rrca => (),
-            Rra => (),
-            RlcR8(reg) => (),
+            Cpl => {
+                self.register.set_flag(BitFlag::N);
+                self.register.set_flag(BitFlag::H);
+                self.register.a = self.register.a ^ 0xff;
+            }
+            Rlca => self.rlca(),
+            Rla => self.rla(),
+            Rrca => self.rrca(),
+            Rra => self.rra(),
+            RlcR8(reg) => {
+                let val = self.register.get_reg8_ref(reg);
+                self.rlc(val);
+            }
             RlcAR16(reg) => (),
             RlR8(reg) => (),
             RlAR16(reg) => (),
