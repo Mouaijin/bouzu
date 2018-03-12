@@ -34,6 +34,13 @@ pub fn swap16(val: u16) -> u16 {
     let (hi, lo) = split_u16(val);
     join_u8(lo, hi)
 }
+///adds with wrap, return carry and half carry
+pub fn add(u0 : u8, u1 : u8) -> (u8,bool,bool){
+    let sum = u0 as u16 + u1 as u16;
+    //todo
+}
+
+
 pub type Addr = u16;
 pub type Du8 = u8;
 pub type Ds8 = i8;

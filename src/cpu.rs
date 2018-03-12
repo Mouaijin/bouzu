@@ -510,20 +510,25 @@ impl Cpu {
                 let val = mmu.read8(addr);
                 self.register.set_reg8(to, val);
                 self.register.dec_reg16(from);
-            },
+            }
             LdhR8A8(to, from_lo) => {
                 let val = mmu.read8(0xff00 | from_lo as u16);
                 self.register.set_reg8(to, val);
-            },
+            }
             LdhA8R8(to_lo, from) => {
                 let val = self.register.get_reg8(from);
                 mmu.write8(0xff00 | to_lo as u16, val);
-            },
+            }
             LdhAR8R8(to_lo_reg, from) => {
                 let addr = 0xff00 | self.register.get_reg8(to_lo_reg) as u16;
                 mmu.write8(addr, self.register.get_reg8(from));
-            },
-            LdhlR16D8(to, imm) => (),
+            }
+            //no clue if this is right
+            LdhlR16D8(to, imm) => {
+                let new = self.register.sp + imm as u8;
+                self.register.set_reg16(to, new);
+                self.register.sp = new;
+            }
             IncR8(reg) => (),
             IncR16(reg) => (),
             IncAR16(reg) => (),
