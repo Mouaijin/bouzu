@@ -2,6 +2,9 @@ use register::*;
 use shared::*;
 use instructions::*;
 use mmu;
+use std::rc::*;
+use std::cell::*;
+use std::boxed::Box;
 
 pub struct Cpu {
     ///CPU register
@@ -126,7 +129,21 @@ impl Cpu {
         }
         self.register.clear_flag(BitFlag::N);
     }
+    ///Increases the referenced register by one
+    ///Sets Z,N(0),H
+    fn inc8_reg(&mut self, reg: Reg8Name) {
+        let val = match self.register.get_reg8(reg.clone()) {
+            0xFF => 0,
+            x => x + 1,
+        };
+        self.register.set_reg8(reg, val);
+        self.register.set_flag_b(BitFlag::Z, val == 0);
 
+        if nth_bit(val, 3) {
+            self.register.set_flag(BitFlag::H);
+        }
+        self.register.clear_flag(BitFlag::N);
+    }
     ///Decreases the referenced value by one
     ///Sets Z, N(0), H
     fn dec8(&mut self, byte: &mut u8) {
@@ -143,7 +160,22 @@ impl Cpu {
         }
         self.register.clear_flag(BitFlag::N);
     }
-
+    ///Decreases the referenced value by one
+    ///Sets Z, N(0), H
+    fn dec8_reg(&mut self, reg: Reg8Name) {
+        let val = match self.register.get_reg8(reg.clone()) {
+            0 => 0xFF,
+            x => x - 1,
+        };
+        self.register.set_reg8(reg, val);
+        if val == 0 {
+            self.register.set_flag(BitFlag::Z);
+        }
+        if nth_bit(val, 3) {
+            self.register.set_flag(BitFlag::H);
+        }
+        self.register.clear_flag(BitFlag::N);
+    }
     ///This instruction adds the contents of the given register pair to register pair HL
     ///Sets C, N(0)
     fn add16(&mut self, reg: Reg16Name) {
@@ -193,6 +225,17 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
     }
+    ///Rotate Left Circular. This instruction rotates either register r of the byte located at the address in HL left one bit, placing bit 7 at bit 0 AND in the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn rlc_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone()).clone();
+        let new = old.clone().rotate_left(1);
+        self.register.set_reg8(reg, new);
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 7));
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
+    }
     /// Rotate Left Accumulator. This instruction rotates A left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
     /// Sets C,N(0),H(0)
     fn rla(&mut self) {
@@ -204,7 +247,7 @@ impl Cpu {
         self.register.clear_flag(BitFlag::N);
         self.register.clear_flag(BitFlag::H);
     }
-    /// Rotate Left. This instruction rotates either register r or the byte located at the address in HL left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
+    /// Rotate Left. This instruction rotates either the byte located at the address in HL left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
     /// Sets Z,C,N(0),H(0)
     fn rl(&mut self, byte: &mut u8) {
         let carry: u8 = self.register.flag_is_set(BitFlag::C) as u8;
@@ -214,6 +257,21 @@ impl Cpu {
         self.register.clear_flag(BitFlag::N);
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
+    }
+
+    /// Rotate Left. This instruction rotates the register L left one bit, placing bit 7 into the Carry flag and the contents of the Carry flag into bit 0 of A
+    /// Sets Z,C,N(0),H(0)
+    fn rl_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let carry: u8 = self.register.flag_is_set(BitFlag::C) as u8;
+        let new = old.clone() << 1 | carry;
+
+        self.register
+            .set_flag_b(BitFlag::C, nth_bit(old.clone(), 7));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
     }
     /// Rotate Right Circular Accumulator. This instruction rotates A right one bit, placing bit 0 at bit 7 AND in the Carry flag.
     /// Sets C,N(0),H(0)
@@ -225,7 +283,7 @@ impl Cpu {
         self.register.clear_flag(BitFlag::N);
         self.register.clear_flag(BitFlag::H);
     }
-    /// Rotate Right Circular. This instruction rotates either register r of the byte located at the address in HL right one bit, placing bit 0 at bit 7 AND in the Carry flag.
+    /// Rotate Right Circular. This instruction rotates the byte located at the address in HL right one bit, placing bit 0 at bit 7 AND in the Carry flag.
     /// Sets Z,C,N(0),H(0)
     fn rrc(&mut self, byte: &mut u8) {
         self.register
@@ -235,6 +293,18 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
 
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
+    }
+    /// Rotate Right Circular. This instruction rotates the register right one bit, placing bit 0 at bit 7 AND in the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn rrc_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let new = old.rotate_right(1);
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 0));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+
+        self.register.set_flag_b(BitFlag::Z, new == 0);
     }
     /// Rotate Right Accumulator. This instruction rotates A right one bit, placing bit 0 into the Carry flag and the contents of the Carry flag into bit 7 of A
     /// Sets C,N(0),H(0)
@@ -258,6 +328,18 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
     }
+    /// Rotate Right. This instruction rotates either register r or the byte located at the address in HL right one bit, placing bit 0 into the Carry flag and the contents of the Carry flag into bit 7 of A
+    /// Sets Z,C,N(0),H(0)
+    fn rr_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let carry: u8 = (self.register.flag_is_set(BitFlag::C) as u8) << 7;
+        let new = old >> 1 | carry;
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 0));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
+    }
     /// Shift Left Arithmetically. This instruction shifts either register r or the byte located at the address in HL left one bit, placing 0 into bit 0, and placing bit 7 into the Carry flag.
     /// Sets Z,C,N(0),H(0)
     fn sla(&mut self, byte: &mut u8) {
@@ -268,16 +350,40 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
     }
+    /// Shift Left Arithmetically. This instruction shifts either register r or the byte located at the address in HL left one bit, placing 0 into bit 0, and placing bit 7 into the Carry flag.
+    /// Sets Z,C,N(0),H(0)
+    fn sla_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let new = old << 1;
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 7));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
+    }
     /// Shift Right Arithmetically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing bit 0 into the Carry flag, and leaving bit 7 untouched.
     /// Sets Z,C,N(0),H(0)
     fn sra(&mut self, byte: &mut u8) {
-        let mask = *byte * 0b10000000;
+        let mask = *byte & 0b10000000;
         self.register
             .set_flag_b(BitFlag::C, nth_bit(byte.clone(), 0));
         *byte = (*byte >> 1) | mask;
         self.register.clear_flag(BitFlag::N);
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
+    }
+    /// Shift Right Arithmetically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing bit 0 into the Carry flag, and leaving bit 7 untouched.
+    /// Sets Z,C,N(0),H(0)
+    fn sra_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let mask = old & 0b10000000;
+
+        let new = old >> 1 | mask;
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 0));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
     }
     /// Shift Right Logically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing 0 into bit 7, and placing bit 0 into the Carry flag.
     /// Sets Z,C,H(0),N(0)
@@ -289,6 +395,17 @@ impl Cpu {
         self.register.clear_flag(BitFlag::H);
         self.register.set_flag_b(BitFlag::Z, *byte == 0);
     }
+    /// Shift Right Logically. This instruction shifts either register r or the byte located at the address in HL right one bit, placing 0 into bit 7, and placing bit 0 into the Carry flag.
+    /// Sets Z,C,H(0),N(0)
+    fn srl_reg(&mut self, reg: Reg8Name) {
+        let old = self.register.get_reg8(reg.clone());
+        let new = old >> 1;
+        self.register.set_flag_b(BitFlag::C, nth_bit(old, 0));
+        self.register.set_reg8(reg, new);
+        self.register.clear_flag(BitFlag::N);
+        self.register.clear_flag(BitFlag::H);
+        self.register.set_flag_b(BitFlag::Z, new == 0);
+    }
 
     ///Tests bit b in register r or the byte addressed in HL. Basically the specified bit gets copied to the Z flag AND INVERTED.
     ///Sets Z, N(0),H(1)
@@ -297,10 +414,24 @@ impl Cpu {
         self.register.set_flag(BitFlag::H);
         self.register.clear_flag(BitFlag::N);
     }
+    ///Tests bit b in register r or the byte addressed in HL. Basically the specified bit gets copied to the Z flag AND INVERTED.
+    ///Sets Z, N(0),H(1)
+    fn bit_reg(&mut self, reg: Reg8Name, b: u8) {
+        let old = self.register.get_reg8(reg);
+        self.register.set_flag_b(BitFlag::Z, !nth_bit(old, b));
+        self.register.set_flag(BitFlag::H);
+        self.register.clear_flag(BitFlag::N);
+    }
     ///Sets (1) bit b in register r or the byte addressed in HL.
     ///No flags
     fn set(&mut self, byte: &mut u8, b: u8) {
         *byte |= 1 << b;
+    }
+    ///Sets (1) bit b in register r or the byte addressed in HL.
+    ///No flags
+    fn set_reg(&mut self, reg: Reg8Name, b: u8) {
+        let old = self.register.get_reg8(reg.clone());
+        self.register.set_reg8(reg, old | 1 << b);
     }
     ///Resets (0) bit b in register r or the byte addressed in HL.
     ///No flags
@@ -308,6 +439,14 @@ impl Cpu {
         let mut mask: u8 = 0b11111110;
         mask.rotate_left(b as u32);
         *byte &= mask;
+    }
+    ///Resets (0) bit b in register r or the byte addressed in HL.
+    ///No flags
+    fn reset_reg(&mut self, reg: Reg8Name, b: u8) {
+        let mut mask: u8 = 0b11111110;
+        mask.rotate_left(b as u32);
+        let old = self.register.get_reg8(reg.clone());
+        self.register.set_reg8(reg, old & mask);
     }
 }
 ///Instruction logic
@@ -389,10 +528,7 @@ impl Cpu {
             Rla => self.rla(),
             Rrca => self.rrca(),
             Rra => self.rra(),
-            RlcR8(reg) => {
-                let val = self.register.get_reg8_ref(reg);
-                self.rlc(val);
-            }
+            RlcR8(reg) => self.rlc_reg(reg),
             RlcAR16(reg) => (),
             RlR8(reg) => (),
             RlAR16(reg) => (),
