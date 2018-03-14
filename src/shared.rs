@@ -35,8 +35,19 @@ pub fn swap16(val: u16) -> u16 {
     join_u8(lo, hi)
 }
 ///adds with wrap, return carry and half carry
-pub fn add(u0 : u8, u1 : u8) -> (u8,bool,bool){
-    let sum = u0 as u16 + u1 as u16;
+pub fn add(u0 : u8, u1 : u8, c : bool) -> (u8,bool,bool){
+    let sum = u0 as u16 + u1 as u16 + c as u16;
+    let carry = sum > 0xffff;
+    let half = nth_bit(4, low_nibble(u0) + low_nibble(u1) + c as u8);
+    (sum as u8, carry, half)
+    //todo
+}
+///subs with wrap, return carry and half carry
+pub fn sub(u0 : u8, u1 : u8, c : bool) -> (u8,bool,bool){
+    let sub = u0 as i16 - u1 as i16 - c as i16;
+    let carry = sub < 0;
+    let half = (low_nibble(u0) as i16 - low_nibble(u1) as i16 - c as i16) < 0;
+    (sub as u8, carry, half)
     //todo
 }
 

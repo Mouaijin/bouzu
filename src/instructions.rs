@@ -61,7 +61,7 @@ pub enum Instruction {
     LdhA8R8(Du8, Reg8Name),
     ///Store value in 8 bit register in address (FF00 + 8 bit register)
     LdhAR8R8(Reg8Name, Reg8Name),
-    ///Add signed 8 bit value to SP and copy SP to 16 bit register
+    ///Add adds signed 8bit value to value in register and assign to HL
     LdhlR16D8(Reg16Name, Ds8),
     ///Inc value in 8 bit register
     IncR8(Reg8Name),

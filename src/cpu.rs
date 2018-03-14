@@ -15,54 +15,22 @@ impl Cpu {
     ///Adds an immediate ubyte to the A register with optional carry
     /// Sets Z,C,N(0),H
     fn add8(&mut self, imm: Du8, use_carry: bool) {
-        let mut result: u16 = imm as u16 + self.register.a as u16;
-        if use_carry && self.register.flag_is_set(BitFlag::C) {
-            result += 1;
-        }
-        //Set carry
-        if result > 0xff {
-            self.register.set_flag(BitFlag::C);
-        }
-        //Set zero
-        if result == 0 {
-            self.register.set_flag(BitFlag::Z);
-        }
-        //Set ADD flag
-        self.register.clear_flag(BitFlag::N);
-
-        let carry = match use_carry && self.register.flag_is_set(BitFlag::C) {
-            true => 1,
-            false => 0,
-        };
-        //Set half-carry
-        if nth_bit(low_nibble(imm) + low_nibble(self.register.a) + carry, 3) {
-            self.register.set_flag(BitFlag::H)
-        }
-
-        //store result
-        self.register.a = result as u8;
+        let (res, carry, half) = add(self.register.a.clone(), imm, use_carry & self.register.flag_is_set(BitFlag::C));
+        self.register.set_flag_b(BitFlag::C, carry);
+        self.register.set_flag_b(BitFlag::H, half);
+        self.register.set_flag_b(BitFlag::Z, res == 0);
+        self.register.set_flag_b(BitFlag::N, false);
+        self.register.a = res;
     }
     ///Subtracts an immediate ubyte from the A register with optional carry
     ///Sets Z,C,N(1),H
     fn sub8(&mut self, imm: Du8, use_carry: bool) {
-        let mut result: i16 = imm as i16 - self.register.a as i16;
-
-        if use_carry && self.register.flag_is_set(BitFlag::C) {
-            result -= 1;
-        }
-
-        //Set carry
-        self.register.set_flag_b(BitFlag::C, result < 0);
-        //Set zero
-        self.register.set_flag_b(BitFlag::Z, result == 0);
-        //Set SUB flag
-        self.register.set_flag(BitFlag::N);
-        let carry = (use_carry && self.register.flag_is_set(BitFlag::C)) as i8;
-        self.register.set_flag_b(
-            BitFlag::H,
-            (low_nibble(result.clone() as u8) as i8 - low_nibble(imm) as i8 - carry) < 0,
-        );
-        self.register.a = result as u8;
+        let (res, carry, half) = sub(self.register.a.clone(), imm, use_carry & self.register.flag_is_set(BitFlag::C));
+        self.register.set_flag_b(BitFlag::C, carry);
+        self.register.set_flag_b(BitFlag::H, half);
+        self.register.set_flag_b(BitFlag::Z, res == 0);
+        self.register.set_flag_b(BitFlag::N, true);
+        self.register.a = res;
     }
     ///Logical AND with A register
     ///Sets Z,C(0),N(0),H(1)
@@ -101,18 +69,11 @@ impl Cpu {
     ///Does not change A register, just flags
     ///Sets Z,C,N(1),H
     fn cp8(&mut self, imm: Du8) {
-        let mut result: i16 = imm as i16 - self.register.a.clone() as i16;
-
-        //Set carry
-        self.register.set_flag_b(BitFlag::C, result < 0);
-        //Set zero
-        self.register.set_flag_b(BitFlag::Z, result == 0);
-        //Set SUB flag
-        self.register.set_flag(BitFlag::N);
-        self.register.set_flag_b(
-            BitFlag::H,
-            (low_nibble(result.clone() as u8) as i8 - low_nibble(imm) as i8) < 0,
-        );
+        let (res, carry, half) = sub(self.register.a.clone(), imm, false);
+        self.register.set_flag_b(BitFlag::C, carry);
+        self.register.set_flag_b(BitFlag::H, half);
+        self.register.set_flag_b(BitFlag::Z, res == 0);
+        self.register.set_flag_b(BitFlag::N, true);
     }
     ///Increases the referenced value by one
     ///Sets Z,N(0),H
@@ -524,14 +485,18 @@ impl Cpu {
                 mmu.write8(addr, self.register.get_reg8(from));
             }
             //no clue if this is right
-            LdhlR16D8(to, imm) => {
-                let new = self.register.sp + imm as u8;
-                self.register.set_reg16(to, new);
-                self.register.sp = new;
+            LdhlR16D8(from, imm) => {
+                let new = self.register.get_reg16(from).clone().wrapping_add(imm as u16);
+                self.register.set_reg16(HL, new);
             }
-            IncR8(reg) => (),
-            IncR16(reg) => (),
-            IncAR16(reg) => (),
+            IncR8(reg) => self.inc8_reg(reg),
+            IncR16(reg) => self.inc16(reg),
+            IncAR16(reg) => {
+                let addr = self.register.get_reg16(reg).clone();
+                let mut val = mmu.read8(addr);
+                self.inc8(&mut val);
+                mmu.write8(addr, val);
+            }
             DecR8(reg) => (),
             DecR16(reg) => (),
             DecAR16(reg) => (),
