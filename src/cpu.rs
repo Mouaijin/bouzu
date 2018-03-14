@@ -68,8 +68,8 @@ impl Cpu {
     ///Compares operand with A register by subtracting from A register
     ///Does not change A register, just flags
     ///Sets Z,C,N(1),H
-    fn cp8(&mut self, imm: Du8) {
-        let (res, carry, half) = sub(self.register.a.clone(), imm, false);
+    fn cp8(&mut self, reg : Reg8Name, imm: Du8) {
+        let (res, carry, half) = sub(self.register.get_reg8(reg), imm, false);
         self.register.set_flag_b(BitFlag::C, carry);
         self.register.set_flag_b(BitFlag::H, half);
         self.register.set_flag_b(BitFlag::Z, res == 0);
@@ -552,15 +552,40 @@ impl Cpu {
                 mmu.write8(addr, val);
             }
             RrcR8(reg) => self.rrc_reg(reg),
-            RrcAR16(reg) => (),
+            RrcAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.rrc(&mut val);
+                mmu.write8(addr, val);
+            }
             RrR8(reg) => self.rr_reg(reg),
-            RrAR16(reg) => (),
+            RrAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.rr(&mut val);
+                mmu.write8(addr, val);
+            }
             SlaR8(reg) => self.sla_reg(reg),
-            SlaAR16(reg) => (),
+            SlaAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.sla(&mut val);
+                mmu.write8(addr, val);
+            }
             SraR8(reg) => self.sra_reg(reg),
-            SraAR16(reg) => (),
+            SraAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.sra(&mut val);
+                mmu.write8(addr, val);
+            }
             SrlR8(reg) => self.srl_reg(reg),
-            SrlAR16(reg) => (),
+            SrlAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr.clone());
+                self.srl(&mut val);
+                mmu.write8(addr, val);
+            }
             JpA16(addr) => (),
             JpAR16(reg) => (),
             JpFA16(flag, addr) => (),
@@ -593,9 +618,15 @@ impl Cpu {
             XorR8AR16(to, from) => (),
             Ei => (),
             Di => (),
-            CpR8R8(to, from) => (),
-            CpR8AR16(to, from) => (),
-            CpR8D8(to, imm) => (),
+            CpR8R8(to, from) => {
+                let val = self.register.get_reg8(from).clone();
+                self.cp8(to, val);
+            }
+            CpR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.cp8(to, val);
+            }
+            CpR8D8(to, imm) => self.cp8(to, imm),
             DaaR8(reg) => (),
             PushR16(reg) => {
                 let val = self.register.get_reg16(reg);
