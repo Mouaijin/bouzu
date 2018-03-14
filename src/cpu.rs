@@ -497,17 +497,37 @@ impl Cpu {
                 self.inc8(&mut val);
                 mmu.write8(addr, val);
             }
-            DecR8(reg) => (),
-            DecR16(reg) => (),
-            DecAR16(reg) => (),
+            DecR8(reg) => self.dec8_reg(reg),
+            DecR16(reg) => self.dec16(reg),
+            DecAR16(reg) => {
+                let addr = self.register.get_reg16(reg).clone();
+                let mut val = mmu.read8(addr);
+                self.dec8(&mut val);
+                mmu.write8(addr, val);
+            }
             Scf => self.register.set_flag(BitFlag::C),
             Ccf => self.register.clear_flag(BitFlag::C),
-            BitR8(bit, reg) => (),
-            BitAR16(bit, reg) => (),
-            ResR8(bit, reg) => (),
-            ResAR16(bit, reg) => (),
-            SetR8(bit, reg) => (),
-            SetAR16(bit, reg) => (),
+            BitR8(bit, reg) => self.bit_reg(reg, bit),
+            BitAR16(bit, reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr);
+                self.bit(&mut val, bit);
+                mmu.write8(addr, val);
+            }
+            ResR8(bit, reg) => self.reset_reg(reg, bit),
+            ResAR16(bit, reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr);
+                self.reset(&mut val, bit);
+                mmu.write8(addr, val);
+            }
+            SetR8(bit, reg) => self.set_reg(reg, bit),
+            SetAR16(bit, reg) => {
+                let addr = self.register.get_reg16(reg);
+                let mut val = mmu.read8(addr);
+                self.set(&mut val, bit);
+                mmu.write8(addr, val);
+            }
             Cpl => {
                 self.register.set_flag(BitFlag::N);
                 self.register.set_flag(BitFlag::H);
@@ -577,8 +597,14 @@ impl Cpu {
             CpR8AR16(to, from) => (),
             CpR8D8(to, imm) => (),
             DaaR8(reg) => (),
-            PushR16(reg) => (),
-            PopR16(reg) => (),
+            PushR16(reg) => {
+                let val = self.register.get_reg16(reg);
+                mmu.push_stack(&mut self.register.sp, val);
+            }
+            PopR16(reg) => {
+                let val = mmu.pop_stack(&mut self.register.sp);
+                self.register.set_reg16(reg, val);
+            }
             CallA16(addr) => {
                 self.register.sp -= 2;
                 let pc = self.register.pc.clone();

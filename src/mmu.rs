@@ -61,32 +61,7 @@ impl Mmu {
             _ => 0,
         }
     }
-    // pub fn ref8(&self, addr: u16) -> u8 {
-    //     match addr {
-    //         //rom memory banks
-    //         0x0000...0x7fff => self.rom.read8(addr),
-    //         0x8000...0x9fff => self.vram[0x8000 - addr as usize],
-    //         //external ram (handled by cartridge)
-    //         0xa000...0xbfff => self.rom.read8(addr),
-    //         //work ram 0
-    //         0xc000...0xcfff => self.work_ram_0[0xa000 - addr as usize],
-    //         //work ram 1..n
-    //         0xd000...0xdfff => self.work_ram_1[0xd000 - addr as usize],
-    //         //echo ram
-    //         0xe000...0xfdff => self.read8(addr - 0x2000),
-    //         //sprite table
-    //         0xfe00...0xfe9f => self.sprite_table[0xfe00 - addr as usize],
-    //         //unusable, I'll just return a 0
-    //         0xfea0...0xfeff => 0,
-    //         //io registers
-    //         0xff00...0xff7f => self.io_registers[0xff00 - addr as usize],
-    //         //hram
-    //         0xff80...0xfffe => self.hram[0xff80 - addr as usize],
-    //         //interrupt register
-    //         0xffff => self.interrupts,
-    //         _ => 0,
-    //     }
-    // }
+
     pub fn read16(&self, addr: u16) -> u16 {
         if addr < 0xffff {
             join_u8(self.read8(addr), self.read8(addr + 1))
@@ -125,5 +100,15 @@ impl Mmu {
         let (hi, lo) = split_u16(dat);
         self.write8(addr, hi);
         self.write8(addr + 1, lo);
+    }
+
+    pub fn push_stack(&mut self, sp : &mut u16, val : u16){
+        *sp -= 2;
+        self.write16(*sp, val);
+    }
+    pub fn pop_stack(&mut self, sp : &mut u16) -> u16{
+        let val = self.read16(*sp);
+        *sp += 2;
+        val
     }
 }
