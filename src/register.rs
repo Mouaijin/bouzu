@@ -64,6 +64,7 @@ pub struct CpuRegister {
     pub sp: u16,
     ///Program Counter/Pointer
     pub pc: u16,
+
 }
 
 impl CpuRegister {
@@ -78,7 +79,7 @@ impl CpuRegister {
             h: 0,
             l: 0,
             sp: 0xfffe,
-            pc: 0,
+            pc: 0
         }
     }
     pub fn set_flag(&mut self, flag: BitFlag) {

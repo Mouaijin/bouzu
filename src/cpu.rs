@@ -9,34 +9,46 @@ use std::boxed::Box;
 pub struct Cpu {
     ///CPU register
     register: CpuRegister,
+
+    ///stupid hack way to not increment PC after jumping
+    pub jumped: bool,
 }
 ///ALU logic
 impl Cpu {
     ///Adds an immediate ubyte to the A register with optional carry
     /// Sets Z,C,N(0),H
-    fn add8(&mut self, imm: Du8, use_carry: bool) {
-        let (res, carry, half) = add(self.register.a.clone(), imm, use_carry & self.register.flag_is_set(BitFlag::C));
+    fn add8(&mut self, reg: Reg8Name, imm: Du8, use_carry: bool) {
+        let (res, carry, half) = add(
+            self.register.get_reg8(reg.clone()),
+            imm,
+            use_carry & self.register.flag_is_set(BitFlag::C),
+        );
         self.register.set_flag_b(BitFlag::C, carry);
         self.register.set_flag_b(BitFlag::H, half);
         self.register.set_flag_b(BitFlag::Z, res == 0);
         self.register.set_flag_b(BitFlag::N, false);
-        self.register.a = res;
+        self.register.set_reg8(reg, res);
     }
     ///Subtracts an immediate ubyte from the A register with optional carry
     ///Sets Z,C,N(1),H
-    fn sub8(&mut self, imm: Du8, use_carry: bool) {
-        let (res, carry, half) = sub(self.register.a.clone(), imm, use_carry & self.register.flag_is_set(BitFlag::C));
+    fn sub8(&mut self, reg: Reg8Name, imm: Du8, use_carry: bool) {
+        let (res, carry, half) = sub(
+            self.register.get_reg8(reg.clone()),
+            imm,
+            use_carry & self.register.flag_is_set(BitFlag::C),
+        );
         self.register.set_flag_b(BitFlag::C, carry);
         self.register.set_flag_b(BitFlag::H, half);
         self.register.set_flag_b(BitFlag::Z, res == 0);
         self.register.set_flag_b(BitFlag::N, true);
-        self.register.a = res;
+        self.register.set_reg8(reg, res);
     }
     ///Logical AND with A register
     ///Sets Z,C(0),N(0),H(1)
-    fn and8(&mut self, imm: Du8) {
-        self.register.a &= imm;
-        if self.register.a == 0 {
+    fn and8(&mut self, reg: Reg8Name, imm: Du8) {
+        let val = self.register.get_reg8(reg.clone()) & imm;
+        self.register.set_reg8(reg, val);
+        if val == 0 {
             self.register.set_flag(BitFlag::Z);
         }
         self.register.set_flag(BitFlag::H);
@@ -45,9 +57,10 @@ impl Cpu {
     }
     ///Logical OR with A register
     ///Sets Z, C(0), N(0), H(0)
-    fn or8(&mut self, imm: Du8) {
-        self.register.a |= imm;
-        if self.register.a == 0 {
+    fn or8(&mut self, reg: Reg8Name, imm: Du8) {
+        let val = self.register.get_reg8(reg.clone()) | imm;
+        self.register.set_reg8(reg, val);
+        if val == 0 {
             self.register.set_flag(BitFlag::Z);
         }
         self.register.clear_flag(BitFlag::H);
@@ -56,9 +69,10 @@ impl Cpu {
     }
     ///Logical XOR with A register
     ///Sets Z, C(0), N(0), H(0)
-    fn xor8(&mut self, imm: Du8) {
-        self.register.a ^= imm;
-        if self.register.a == 0 {
+    fn xor8(&mut self, reg: Reg8Name, imm: Du8) {
+        let val = self.register.get_reg8(reg.clone()) ^ imm;
+        self.register.set_reg8(reg, val);
+        if val == 0 {
             self.register.set_flag(BitFlag::Z);
         }
         self.register.clear_flag(BitFlag::H);
@@ -68,7 +82,7 @@ impl Cpu {
     ///Compares operand with A register by subtracting from A register
     ///Does not change A register, just flags
     ///Sets Z,C,N(1),H
-    fn cp8(&mut self, reg : Reg8Name, imm: Du8) {
+    fn cp8(&mut self, reg: Reg8Name, imm: Du8) {
         let (res, carry, half) = sub(self.register.get_reg8(reg), imm, false);
         self.register.set_flag_b(BitFlag::C, carry);
         self.register.set_flag_b(BitFlag::H, half);
@@ -486,7 +500,10 @@ impl Cpu {
             }
             //no clue if this is right
             LdhlR16D8(from, imm) => {
-                let new = self.register.get_reg16(from).clone().wrapping_add(imm as u16);
+                let new = self.register
+                    .get_reg16(from)
+                    .clone()
+                    .wrapping_add(imm as u16);
                 self.register.set_reg16(HL, new);
             }
             IncR8(reg) => self.inc8_reg(reg),
@@ -593,10 +610,25 @@ impl Cpu {
             JrA8(offset) => (),
             JrFA8(flag, offset) => (),
             JrNfA8(flag, offset) => (),
-            AddR8R8(to, from) => (),
-            AddR8D8(reg, imm) => (),
-            AddR8AR16(to, from) => (),
-            AddR16R16(to, from) => (),
+            AddR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.add8(to, val, false);
+            }
+            AddR8D8(reg, imm) => self.add8(reg, imm, false),
+            AddR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.add8(to, val, false);
+            }
+            AddR16R16(to, from) => {
+                let fval = self.register.get_reg16(from.clone());
+                let tval = self.register.get_reg16(to.clone());
+                let (res, carry, half) = add16(tval, fval, false);
+                self.register.set_flag_b(BitFlag::C, carry);
+                self.register.set_flag_b(BitFlag::H, half);
+                self.register.set_flag_b(BitFlag::Z, res == 0);
+                self.register.set_flag_b(BitFlag::N, false);
+                self.register.set_reg16(to, res);
+            }
             AddR16D8(to, imm) => (),
             AdcR8R8(to, from) => (),
             AdcR8D8(reg, imm) => (),
@@ -638,9 +670,10 @@ impl Cpu {
             }
             CallA16(addr) => {
                 self.register.sp -= 2;
-                let pc = self.register.pc.clone();
+                let pc = self.register.pc + 3;
                 mmu.write16(self.register.sp, pc);
                 self.register.pc = addr;
+                self.jumped = true;
             }
             CallFA16(flag, addr) => (),
             CallNfA16(flag, addr) => (),
@@ -648,6 +681,7 @@ impl Cpu {
                 let pc = mmu.read16(self.register.sp);
                 self.register.sp += 2;
                 self.register.pc = pc;
+                self.jumped = true;
             }
             Reti => (),
             RetF(flag) => (),

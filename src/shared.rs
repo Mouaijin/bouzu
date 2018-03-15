@@ -16,6 +16,13 @@ pub fn nth_bit(num: u8, bit_index: u8) -> bool {
     //shift, mask, and compare
     (num >> bit_index) & 1 == 1
 }
+pub fn nth_bit16(num: u16, bit_index: u16) -> bool {
+    if bit_index > 15 || bit_index < 0 {
+        panic!("you literally can't read bits outside of a byte");
+    }
+    //shift, mask, and compare
+    (num >> bit_index) & 1 == 1
+}
 
 pub fn high_nibble(val: u8) -> u8 {
     (val & 0b11110000) >> 4
@@ -36,10 +43,21 @@ pub fn swap16(val: u16) -> u16 {
 }
 ///adds with wrap, return carry and half carry
 pub fn add(u0 : u8, u1 : u8, c : bool) -> (u8,bool,bool){
-    let sum = u0 as u16 + u1 as u16 + c as u16;
-    let carry = sum > 0xffff;
+    let sum = u0 as u32 + u1 as u32 + c as u32;
+    let carry = sum > 0xff;
     let half = nth_bit(4, low_nibble(u0) + low_nibble(u1) + c as u8);
     (sum as u8, carry, half)
+    //todo
+}
+
+///adds with wrap, return carry and half carry
+pub fn add16(u0 : u16, u1 : u16, c : bool) -> (u16,bool,bool){
+    let sum = u0 as u32 + u1 as u32 + c as u32;
+    let carry = sum > 0xffff;
+    let (hi, _lo) = split_u16(u0);
+    let (_hi, lo) = split_u16(u1);
+    let half = nth_bit16(7, hi as u16 + lo as u16 + c as u16);
+    (sum as u16, carry, half)
     //todo
 }
 ///subs with wrap, return carry and half carry
