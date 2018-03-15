@@ -428,6 +428,8 @@ impl Cpu {
 impl Cpu {
     fn inc_pc(&mut self, ins: Instruction) {}
     pub fn run_ins(&mut self, mmu: &mut mmu::Mmu, ins: Instruction) {
+        //reset internal jump flag
+        self.jumped = false;
         use instructions::Instruction::*;
         use register::Reg8Name::*;
         use register::Reg16Name::*;
@@ -603,13 +605,46 @@ impl Cpu {
                 self.srl(&mut val);
                 mmu.write8(addr, val);
             }
-            JpA16(addr) => (),
-            JpAR16(reg) => (),
-            JpFA16(flag, addr) => (),
-            JpNfA16(flag, addr) => (),
-            JrA8(offset) => (),
-            JrFA8(flag, offset) => (),
-            JrNfA8(flag, offset) => (),
+            JpA16(addr) => {
+                self.register.pc = addr;
+                self.jumped = true;
+            }
+            JpAR16(reg) => {
+                let addr = self.register.get_reg16(reg);
+                self.register.pc = addr;
+                self.jumped = true;
+            }
+            JpFA16(flag, addr) => {
+                if self.register.flag_is_set(flag) {
+                    self.register.pc = addr;
+                    self.jumped = true;
+                }
+            }
+            JpNfA16(flag, addr) => {
+                if self.register.flag_is_unset(flag) {
+                    self.register.pc = addr;
+                    self.jumped = true;
+                }
+            }
+            JrA8(offset) => {
+                let val = (self.register.sp as i16).wrapping_add(offset as i16);
+                self.register.sp = val as u16;
+                self.jumped = true;
+            }
+            JrFA8(flag, offset) => {
+                if self.register.flag_is_set(flag) {
+                    let val = (self.register.sp as i16).wrapping_add(offset as i16);
+                    self.register.sp = val as u16;
+                    self.jumped = true;
+                }
+            }
+            JrNfA8(flag, offset) => {
+                if self.register.flag_is_unset(flag) {
+                    let val = (self.register.sp as i16).wrapping_add(offset as i16);
+                    self.register.sp = val as u16;
+                    self.jumped = true;
+                }
+            }
             AddR8R8(to, from) => {
                 let val = self.register.get_reg8(from);
                 self.add8(to, val, false);
@@ -648,8 +683,8 @@ impl Cpu {
             XorR8R8(to, from) => (),
             XorR8D8(to, imm) => (),
             XorR8AR16(to, from) => (),
-            Ei => (),
-            Di => (),
+            Ei => mmu.enable_interrupts(),
+            Di => mmu.disable_interrupts(),
             CpR8R8(to, from) => {
                 let val = self.register.get_reg8(from).clone();
                 self.cp8(to, val);
@@ -669,24 +704,60 @@ impl Cpu {
                 self.register.set_reg16(reg, val);
             }
             CallA16(addr) => {
-                self.register.sp -= 2;
                 let pc = self.register.pc + 3;
-                mmu.write16(self.register.sp, pc);
+                mmu.push_stack(&mut self.register.sp, pc);
                 self.register.pc = addr;
                 self.jumped = true;
             }
-            CallFA16(flag, addr) => (),
-            CallNfA16(flag, addr) => (),
+            CallFA16(flag, addr) => {
+                if self.register.flag_is_set(flag) {
+                    let pc = self.register.pc + 3;
+                    mmu.push_stack(&mut self.register.sp, pc);
+                    self.register.pc = addr;
+                    self.jumped = true;
+                }
+            }
+            CallNfA16(flag, addr) => {
+                if self.register.flag_is_unset(flag) {
+                    let pc = self.register.pc + 3;
+                    mmu.push_stack(&mut self.register.sp, pc);
+                    self.register.pc = addr;
+                    self.jumped = true;
+                }
+            }
             Ret => {
-                let pc = mmu.read16(self.register.sp);
-                self.register.sp += 2;
+                let pc = mmu.pop_stack(&mut self.register.sp);
                 self.register.pc = pc;
                 self.jumped = true;
             }
-            Reti => (),
-            RetF(flag) => (),
-            RetNf(flag) => (),
-            Rst(addr) => (),
+            Reti => {
+                let pc = mmu.pop_stack(&mut self.register.sp);
+                self.register.pc = pc;
+                self.jumped = true;
+                mmu.enable_interrupts();
+            }
+            RetF(flag) => {
+                if self.register.flag_is_set(flag) {
+                    let pc = mmu.read16(self.register.sp);
+                    self.register.sp += 2;
+                    self.register.pc = pc;
+                    self.jumped = true;
+                }
+            }
+            RetNf(flag) => {
+                if self.register.flag_is_unset(flag) {
+                    let pc = mmu.read16(self.register.sp);
+                    self.register.sp += 2;
+                    self.register.pc = pc;
+                    self.jumped = true;
+                }
+            }
+            Rst(addr) => {
+                let pc = self.register.pc + 1;
+                mmu.push_stack(&mut self.register.sp, pc);
+                self.register.pc = addr;
+                self.jumped = true;
+            }
         }
     }
 

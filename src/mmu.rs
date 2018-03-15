@@ -102,13 +102,16 @@ impl Mmu {
         self.write8(addr + 1, lo);
     }
 
-    pub fn push_stack(&mut self, sp : &mut u16, val : u16){
+    pub fn push_stack(&mut self, sp: &mut u16, val: u16) {
         *sp -= 2;
         self.write16(*sp, val);
     }
-    pub fn pop_stack(&mut self, sp : &mut u16) -> u16{
+    pub fn pop_stack(&mut self, sp: &mut u16) -> u16 {
         let val = self.read16(*sp);
         *sp += 2;
         val
     }
+
+    pub fn enable_interrupts(&mut self) {}
+    pub fn disable_interrupts(&mut self) {}
 }
