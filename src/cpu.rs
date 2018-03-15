@@ -5,6 +5,7 @@ use mmu;
 use std::rc::*;
 use std::cell::*;
 use std::boxed::Box;
+use log;
 
 pub struct Cpu {
     ///CPU register
@@ -428,10 +429,18 @@ impl Cpu {
 }
 ///Instruction logic
 impl Cpu {
+    pub fn new() -> Self {
+        Cpu {
+            register: CpuRegister::new(),
+            jumped: false,
+            halted: false,
+        }
+    }
     pub fn step(&mut self, mmu: &mut mmu::Mmu) {
         if !self.halted {
             let ins = decode(mmu, self.register.sp);
             self.register.pc += ins.clone().get_size() as u16;
+            debug!("{:?}", ins);
             self.run_ins(mmu, ins);
         }
     }
