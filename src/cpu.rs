@@ -428,13 +428,19 @@ impl Cpu {
 }
 ///Instruction logic
 impl Cpu {
-    fn inc_pc(&mut self, ins: Instruction) {}
+    pub fn step(&mut self, mmu: &mut mmu::Mmu) {
+        if !self.halted {
+            let ins = decode(mmu, self.register.sp);
+            self.register.pc += ins.clone().get_size() as u16;
+            self.run_ins(mmu, ins);
+        }
+    }
+
     pub fn run_ins(&mut self, mmu: &mut mmu::Mmu, ins: Instruction) {
         //reset internal jump flag
         self.jumped = false;
         use instructions::Instruction::*;
-        use register::Reg8Name::*;
-        use register::Reg16Name::*;
+        use register::Reg16Name::HL;
         match ins {
             Nop => (),
             Halt => self.halted = true,
@@ -734,14 +740,14 @@ impl Cpu {
             CpR8D8(to, imm) => self.cp8(to, imm),
             DaaR8(reg) => {
                 //todo: there is no way this shit is correct
-                let val = self.register.get_reg8(reg.clone());
+                let val = self.register.get_reg8(reg.clone()) as u16;
                 let lo = val % 0x10;
                 let hi = ((val % 0x100) - lo) / 0x10;
                 let rs = (hi << 4) | lo;
                 self.register.set_flag_b(BitFlag::Z, rs == 0);
                 self.register.clear_flag(BitFlag::H);
                 self.register.set_flag_b(BitFlag::C, val >= 0x100);
-                self.register.set_reg8(reg, val);
+                self.register.set_reg8(reg, val as u8);
             }
             PushR16(reg) => {
                 let val = self.register.get_reg16(reg);

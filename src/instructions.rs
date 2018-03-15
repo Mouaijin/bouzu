@@ -15,7 +15,7 @@ use mmu;
 ///  AR8  = 8 bit address in register (offset)
 ///  AR16 = 16 bit address in register
 ///```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     ///No-op
     Nop,
