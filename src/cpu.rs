@@ -732,7 +732,17 @@ impl Cpu {
                 self.cp8(to, val);
             }
             CpR8D8(to, imm) => self.cp8(to, imm),
-            DaaR8(reg) => (),
+            DaaR8(reg) => {
+                //todo: there is no way this shit is correct
+                let val = self.register.get_reg8(reg.clone());
+                let lo = val % 0x10;
+                let hi = ((val % 0x100) - lo) / 0x10;
+                let rs = (hi << 4) | lo;
+                self.register.set_flag_b(BitFlag::Z, rs == 0);
+                self.register.clear_flag(BitFlag::H);
+                self.register.set_flag_b(BitFlag::C, val >= 0x100);
+                self.register.set_reg8(reg, val);
+            }
             PushR16(reg) => {
                 let val = self.register.get_reg16(reg);
                 mmu.push_stack(&mut self.register.sp, val);
