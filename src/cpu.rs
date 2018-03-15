@@ -11,7 +11,10 @@ pub struct Cpu {
     register: CpuRegister,
 
     ///stupid hack way to not increment PC after jumping
-    pub jumped: bool,
+    jumped: bool,
+
+    ///are we halted for interrupts?
+    halted: bool,
 }
 ///ALU logic
 impl Cpu {
@@ -153,14 +156,13 @@ impl Cpu {
     }
     ///This instruction adds the contents of the given register pair to register pair HL
     ///Sets C, N(0)
-    fn add16(&mut self, reg: Reg16Name) {
-        let val = self.register.get_reg16(reg.clone()) as u32
-            + self.register.get_reg16(Reg16Name::HL) as u32;
+    fn add16(&mut self, reg: Reg16Name, imm: u16) {
+        let val = self.register.get_reg16(reg.clone()) as u32 + imm as u32;
         if val > 0xffff {
             self.register.set_flag(BitFlag::C)
         }
         self.register.clear_flag(BitFlag::N);
-        self.register.set_reg16(Reg16Name::HL, val as u16);
+        self.register.set_reg16(reg, val as u16);
     }
     ///Increments the value of the given register pair
     ///Sets {}
@@ -435,7 +437,7 @@ impl Cpu {
         use register::Reg16Name::*;
         match ins {
             Nop => (),
-            Halt => (),
+            Halt => self.halted = true,
             Stop => (),
             SwapR8(reg) => swap8(self.register.get_reg8_ref(reg)),
             SwapAR16(reg) => {
@@ -664,25 +666,61 @@ impl Cpu {
                 self.register.set_flag_b(BitFlag::N, false);
                 self.register.set_reg16(to, res);
             }
-            AddR16D8(to, imm) => (),
-            AdcR8R8(to, from) => (),
-            AdcR8D8(reg, imm) => (),
-            AdcR8AR16(to, from) => (),
-            SubR8R8(to, from) => (),
-            SubR8D8(to, imm) => (),
-            SubR8AR16(to, from) => (),
-            SbcR8R8(to, from) => (),
-            SbcR8AR16(to, from) => (),
-            SbcR8D8(to, imm) => (),
-            AndR8R8(to, from) => (),
-            AndR8D8(to, imm) => (),
-            AndR8AR16(to, from) => (),
-            OrR8R8(to, from) => (),
-            OrR8D8(to, imm) => (),
-            OrR8AR16(to, from) => (),
-            XorR8R8(to, from) => (),
-            XorR8D8(to, imm) => (),
-            XorR8AR16(to, from) => (),
+            AddR16D8(to, imm) => self.add16(to, imm as u16),
+            AdcR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.add8(to, val, true);
+            }
+            AdcR8D8(reg, imm) => self.add8(reg, imm, true),
+            AdcR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.add8(to, val, true);
+            }
+            SubR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.sub8(to, val, false);
+            }
+            SubR8D8(to, imm) => self.sub8(to, imm, false),
+            SubR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.sub8(to, val, false);
+            }
+            SbcR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.sub8(to, val, true);
+            }
+            SbcR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.sub8(to, val, true);
+            }
+            SbcR8D8(to, imm) => self.sub8(to, imm, true),
+            AndR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.and8(to, val);
+            }
+            AndR8D8(to, imm) => self.and8(to, imm),
+            AndR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.and8(to, val);
+            }
+            OrR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.or8(to, val);
+            }
+            OrR8D8(to, imm) => self.or8(to, imm),
+            OrR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.or8(to, val);
+            }
+            XorR8R8(to, from) => {
+                let val = self.register.get_reg8(from);
+                self.xor8(to, val);
+            }
+            XorR8D8(to, imm) => self.xor8(to, imm),
+            XorR8AR16(to, from) => {
+                let val = mmu.read8(self.register.get_reg16(from));
+                self.xor8(to, val);
+            }
             Ei => mmu.enable_interrupts(),
             Di => mmu.disable_interrupts(),
             CpR8R8(to, from) => {
@@ -760,6 +798,4 @@ impl Cpu {
             }
         }
     }
-
-    //CALL subtracts 2 bytes from SP after pushing return address (0xfffe) RET adds it back to SP and moves PC back to the address there
 }
