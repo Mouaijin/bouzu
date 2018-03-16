@@ -12,7 +12,7 @@ fn main() {
     let rom = rom::load_rom("roms/real/tetris.gb").expect("Couldn't load rom");
     let mut mmu = mmu::Mmu::new(rom);
     let mut cpu = cpu::Cpu::new();
-    for x in 0..10 {
+    loop {
         cpu.step(&mut mmu);
     }
 }

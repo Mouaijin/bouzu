@@ -440,7 +440,7 @@ impl Cpu {
         if !self.halted {
             let ins = decode(mmu, self.register.sp);
             self.register.pc += ins.clone().get_size() as u16;
-            debug!("{:?}", ins);
+            println!("{:?}", ins);
             self.run_ins(mmu, ins);
         }
     }
