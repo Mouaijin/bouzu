@@ -55,7 +55,7 @@ impl Mmu {
             //io registers
             0xff00...0xff7f => self.io_registers[0xff00 - addr as usize],
             //hram
-            0xff80...0xfffe => self.hram[0xfffe - (0xfffe - addr) as usize],
+            0xff80...0xfffe => self.hram[(addr - 0xff81) as usize],
             //interrupt register
             0xffff => self.interrupts,
             _ => 0,
